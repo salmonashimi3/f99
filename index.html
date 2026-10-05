@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sky Thunder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
@@ -82,6 +82,26 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .keys div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding-block:4px}.keys span{color:var(--dim)}
 #loading .sheet{width:min(380px,100%)}
 .lbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}.lbar i{display:block;height:100%;width:0;background:var(--amber)}
+/* touch controls */
+#touch{position:fixed;inset:0;z-index:4;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:none}
+#touch>*{pointer-events:auto;touch-action:none}
+#joy{position:absolute;left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:150px;height:150px;border-radius:50%;background:rgba(10,14,18,.35);border:2px solid rgba(233,238,242,.25)}
+#knob{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;background:rgba(233,238,242,.35);border:2px solid rgba(233,238,242,.6)}
+.tb{position:absolute;display:grid;place-items:center;border-radius:50%;background:rgba(10,14,18,.5);border:2px solid rgba(233,238,242,.35);color:var(--ink);font:700 13px var(--f-kr);text-align:center;line-height:1.1;padding:0}
+.tb.on,.tb:active{background:rgba(255,181,71,.45);border-color:var(--amber)}
+.tb small{display:block;font:600 11px var(--f-ui);color:var(--dim)}
+#tFire{right:calc(26px + env(safe-area-inset-right,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));width:96px;height:96px;font-size:15px;border-color:rgba(255,74,61,.7)}
+#tMsl{right:calc(134px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:70px;height:70px}
+#tFlr{right:calc(30px + env(safe-area-inset-right,0px));bottom:calc(140px + env(safe-area-inset-bottom,0px));width:64px;height:64px}
+#tSw{right:calc(110px + env(safe-area-inset-right,0px));bottom:calc(106px + env(safe-area-inset-bottom,0px));width:56px;height:56px;font-size:11px}
+#tUp,#tDn{right:calc(214px + env(safe-area-inset-right,0px));width:58px;height:58px;border-radius:12px;font-size:20px}
+#tUp{bottom:calc(92px + env(safe-area-inset-bottom,0px))}#tDn{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.tsm{position:absolute;top:calc(64px + env(safe-area-inset-top,0px));height:40px;min-width:56px;border-radius:8px;font-size:12px;padding:0 10px}
+#tPause{left:calc(12px + env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));width:44px;height:44px;border-radius:10px;font-size:16px}
+#tView{right:calc(12px + env(safe-area-inset-right,0px))}#tGear{right:calc(78px + env(safe-area-inset-right,0px))}#tTank{right:calc(144px + env(safe-area-inset-right,0px))}
+#portrait{position:fixed;inset:0;z-index:7;display:grid;place-items:center;background:rgba(6,8,10,.92);text-align:center;padding:16px;font-size:16px}
+#devOv .row button{flex:1;min-width:140px;padding:22px 10px;font-size:18px}
+.devbtn{font-size:12px}
 @media (max-width:860px){#hangar{grid-template-columns:1fr;grid-template-rows:auto 160px 1fr auto auto;overflow:auto}.stage{min-height:120px}}
 </style>
 </head>
@@ -95,6 +115,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <div class="top">
     <div class="brand">SKY THUNDER<small>스카이 썬더 · HANGAR</small></div>
     <div class="lvl"><span class="hint">격납고</span><b class="num" id="hLvl">Lv 1</b><div><div class="prog"><i id="hProg"></i></div><div class="hint" id="hProgT">다음 레벨까지 0/10판</div></div></div>
+    <button class="devbtn" id="btnMus">음악 끄기</button>
+    <button class="devbtn" id="btnDev">조작: PC</button>
     <button class="pass" id="btnPass">개발자 패스</button>
     <div class="coins">전투기 코인 <b class="num" id="hCoins">0</b></div>
   </div>
@@ -123,12 +145,31 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <div class="hint" id="passMsg" role="status"></div>
   <div class="row"><button id="passClose">닫기</button></div>
 </div></div>
+<div class="ov" id="devOv" hidden><div class="sheet">
+  <div class="hint">SKY THUNDER</div><h2>어떤 기기로 할까요?</h2>
+  <p class="hint" style="margin:0">모바일은 화면에 조이스틱과 버튼이 나오고, PC는 마우스와 키보드로 조종합니다. 나중에 격납고 위쪽 버튼으로 바꿀 수 있어요.</p>
+  <div class="row"><button class="primary" id="devMobile">모바일</button><button class="primary" id="devPC">PC</button></div>
+</div></div>
+<div id="touch" hidden>
+  <div id="joy"><div id="knob"></div></div>
+  <button class="tb" id="tFire">기관포</button>
+  <button class="tb" id="tMsl">미사일</button>
+  <button class="tb" id="tFlr">플레어</button>
+  <button class="tb" id="tSw">무장<br>전환</button>
+  <button class="tb" id="tUp">▲</button>
+  <button class="tb" id="tDn">▼</button>
+  <button class="tb" id="tPause">Ⅱ</button>
+  <button class="tb tsm" id="tView">시점</button>
+  <button class="tb tsm" id="tGear">기어</button>
+  <button class="tb tsm" id="tTank">급유기</button>
+</div>
+<div id="portrait" hidden>휴대폰을 가로로 돌려주세요</div>
 <div class="ov" id="keysOv" hidden><div class="sheet">
   <h2>조작법</h2>
   <div class="keys">
     <div><span>조준 / 선회</span><b>마우스</b></div><div><span>기관포</span><b>좌클릭</b></div>
     <div><span>미사일 (락온 필요)</span><b>우클릭 · Space</b></div><div><span>미사일 종류</span><b>1 · 2</b></div>
-    <div><span>스로틀 ↑ / ↓</span><b>Shift · X · 휠</b></div><div><span>시점 전환</span><b>V</b></div>
+    <div><span>스로틀 ↑ / ↓</span><b>Shift · Enter · 휠</b></div><div><span>착륙 기어</span><b>G</b></div><div><span>공중급유기 호출</span><b>F1</b></div><div><span>시점 전환</span><b>V</b></div>
     <div><span>자유 시점</span><b>C 누르기</b></div><div><span>플레어</span><b>F</b></div>
     <div><span>수동 조종</span><b>W S A D Q E · 방향키</b></div><div><span>음소거 · 일시정지</span><b>M · Esc</b></div>
   </div>
@@ -211,9 +252,14 @@ function hash(x,z){const h=Math.sin(x*127.1+z*311.7)*43758.5453;return h-Math.fl
 function vn(x,z){const xi=Math.floor(x),zi=Math.floor(z),xf=x-xi,zf=z-zi,u=xf*xf*(3-2*xf),v=zf*zf*(3-2*zf);
  const a=hash(xi,zi),b=hash(xi+1,zi),c=hash(xi,zi+1),d=hash(xi+1,zi+1);return (a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v)*2-1}
 function fbm(x,z,o){let s=0,a=.5,f=1;for(let i=0;i<o;i++){s+=a*vn(x*f+i*17.3,z*f-i*9.1);f*=2.03;a*=.5}return s}
-function H(x,z){const land=fbm(x/15000+3.1,z/15000-1.7,4)*1.25+.05;let h=land*700;const m=smooth(.08,.5,land);const r=1-Math.abs(fbm(x/5200,z/5200,5));
+const BASE_Y=25,SERVICE_T=10;
+const BASES=[{team:0,x:0,z:15000},{team:1,x:0,z:-15000}].map(b=>({...b,y:BASE_Y,len:3000,wid:70,occupant:null}));
+const baseOf=t=>BASES.find(b=>b.team===t);
+function H(x,z){let h=H0(x,z);for(const b of BASES){const rx=Math.max(Math.abs(x-b.x)-1700,0),rz=Math.max(Math.abs(z-b.z)-450,0);const w=1-smooth(0,1600,Math.hypot(rx,rz));if(w>0)h=lerp(h,b.y,w)}return h}
+function H0(x,z){const land=fbm(x/15000+3.1,z/15000-1.7,4)*1.25+.05;let h=land*700;const m=smooth(.08,.5,land);const r=1-Math.abs(fbm(x/5200,z/5200,5));
   return h+m*r*r*r*2300+fbm(x/1100,z/1100,3)*70*m}
 const ground=(x,z)=>Math.max(H(x,z),0);
+function runwayAt(p){for(const b of BASES){if(Math.abs(p.x-b.x)<b.len/2+40&&Math.abs(p.z-b.z)<b.wid/2+30)return b}return null}
 {
   const MAP=64000,SEG=400,g=new THREE.PlaneGeometry(MAP,MAP,SEG,SEG);g.rotateX(-Math.PI/2);
   const p=g.attributes.position,col=new Float32Array(p.count*3);for(let i=0;i<p.count;i++)p.setY(i,H(p.getX(i),p.getZ(i)));
@@ -255,6 +301,28 @@ const ground=(x,z)=>Math.max(H(x,z),0);
     #include <logdepthbuf_fragment>
     vec4 t=texture2D(map,vUv);vec3 c=mix(vec3(.62,.67,.74),vec3(1.,.99,.96),smoothstep(.15,.85,vUv.y))*vS;c=mix(c,fogC,smoothstep(6000.,40000.,vF));gl_FragColor=vec4(c,t.a*vNear*.95);}`});
   const cl=new THREE.Mesh(g,mat);cl.frustumCulled=false;cl.renderOrder=5;scene.add(cl);
+}
+
+/* ================= air bases ================= */
+{
+  const c=document.createElement('canvas');c.width=2048;c.height=64;const x=c.getContext('2d');
+  x.fillStyle='#3b3f44';x.fillRect(0,0,2048,64);for(let i=0;i<4000;i++){x.fillStyle=`rgba(${rnd(40,90)|0},${rnd(40,90)|0},${rnd(45,95)|0},.35)`;x.fillRect(Math.random()*2048,Math.random()*64,2,1)}
+  x.fillStyle='#e8e8e2';x.fillRect(0,3,2048,2);x.fillRect(0,59,2048,2);
+  for(let i=80;i<1968;i+=48)x.fillRect(i,31,26,2);
+  for(const e of[12,2048-40])for(let k=0;k<8;k++)x.fillRect(e,7+k*6.5,28,3.5);
+  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;
+  const rmat=new THREE.MeshStandardMaterial({map:tex,roughness:.9,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+  for(const b of BASES){
+    const rw=new THREE.Mesh(new THREE.PlaneGeometry(b.len,b.wid).rotateX(-Math.PI/2),rmat);rw.position.set(b.x,b.y+.35,b.z);rw.receiveShadow=true;scene.add(rw);
+    const ap=new THREE.Mesh(new THREE.PlaneGeometry(900,160).rotateX(-Math.PI/2),new THREE.MeshStandardMaterial({color:'#55595e',roughness:.95,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1}));
+    const side=b.team===0?1:-1;ap.position.set(b.x,b.y+.3,b.z+side*150);scene.add(ap);
+    const hm=new THREE.MeshStandardMaterial({color:'#8b9196',roughness:.7});
+    for(let i=0;i<4;i++){const h=new THREE.Mesh(new THREE.CylinderGeometry(22,22,60,16,1,false,0,Math.PI).rotateZ(Math.PI/2).rotateY(Math.PI/2),hm);h.position.set(b.x-300+i*90,b.y,b.z+side*215);h.castShadow=true;scene.add(h)}
+    const tw=new THREE.Mesh(new THREE.BoxGeometry(14,36,14),new THREE.MeshStandardMaterial({color:'#c9ccc8'}));tw.position.set(b.x+260,b.y+18,b.z+side*200);scene.add(tw);
+    const cab=new THREE.Mesh(new THREE.BoxGeometry(20,8,20),new THREE.MeshStandardMaterial({color:'#2b4c5f',roughness:.2,metalness:.3}));cab.position.set(b.x+260,b.y+40,b.z+side*200);scene.add(cab);
+    const fl=new THREE.Mesh(new THREE.BoxGeometry(1,12,18),new THREE.MeshBasicMaterial({color:b.team===0?'#4aa8ff':'#ff4a3d'}));fl.position.set(b.x+300,b.y+50,b.z+side*200);scene.add(fl);
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,56),new THREE.MeshStandardMaterial({color:'#ddd'}));pole.position.set(b.x+300,b.y+28,b.z+side*200);scene.add(pole);
+  }
 }
 
 /* ================= hangar scene ================= */
@@ -329,11 +397,33 @@ const sfx=(()=>{let ctx=null,master,eng={},gun={},tone={},muted=false,brown,whit
     whoosh(){if(!ctx)return;const t=ctx.currentTime,s=ctx.createBufferSource();s.buffer=white;const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.setValueAtTime(400,t);f.frequency.exponentialRampToValueAtTime(2500,t+.8);const g=ctx.createGain();g.gain.setValueAtTime(.5,t);g.gain.exponentialRampToValueAtTime(.001,t+1.4);s.connect(f).connect(g).connect(master);s.start(t);s.stop(t+1.5)},
     boom(pos,big){if(!ctx)return;const d=pos?camera.position.distanceTo(pos):0,vol=clamp(1.2*big/(1+d/700),0,1.2);if(vol<.02)return;const t=ctx.currentTime+d/340*.3,s=ctx.createBufferSource();s.buffer=brown;
       const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(900,t);f.frequency.exponentialRampToValueAtTime(60,t+1.6);const g=ctx.createGain();g.gain.setValueAtTime(.0001,ctx.currentTime);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+2);s.connect(f).connect(g).connect(master);s.start(t);s.stop(t+2.1)},
-    hit(){this.shot(2400,.04,.12,'triangle')}}})();
+    hit(){this.shot(2400,.04,.12,'triangle')},
+    /* lobby theme: synthesized minor-key ostinato with pads and drums (original, generated live) */
+    music(on){if(!ctx)return;if(on){if(this._mus)return;const bus=ctx.createGain();bus.gain.value=0;bus.connect(master);bus.gain.setTargetAtTime(.32,ctx.currentTime,1.2);
+        const comp=ctx.createDynamicsCompressor();comp.connect(bus);const mus={bus,comp,step:0,next:ctx.currentTime+.1,timer:null};this._mus=mus;
+        const roots=[38,34,36,33],bpm=112,six=60/bpm/4;const f=n=>440*Math.pow(2,(n-69)/12);
+        const note=(t,freq,dur,type,vol,cut)=>{const o=ctx.createOscillator(),g=ctx.createGain(),lp=ctx.createBiquadFilter();o.type=type;o.frequency.value=freq;lp.type='lowpass';lp.frequency.value=cut;
+          g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(lp).connect(g).connect(comp);o.start(t);o.stop(t+dur+.05)};
+        const drum=(t,vol,fr)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(fr,t);o.frequency.exponentialRampToValueAtTime(fr*.35,t+.35);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+.6);o.connect(g).connect(comp);o.start(t);o.stop(t+.7);
+          const n=ctx.createBufferSource();n.buffer=white;const nf=ctx.createBiquadFilter();nf.type='lowpass';nf.frequency.value=900;const ng=ctx.createGain();ng.gain.setValueAtTime(vol*.4,t);ng.gain.exponentialRampToValueAtTime(.001,t+.18);n.connect(nf).connect(ng).connect(comp);n.start(t);n.stop(t+.2)};
+        const pad=(t,root,dur)=>{for(const iv of[0,7,12,15]){for(const dt of[-6,6]){const o=ctx.createOscillator(),g=ctx.createGain(),lp=ctx.createBiquadFilter();o.type='sawtooth';o.frequency.value=f(root+12+iv);o.detune.value=dt;
+          lp.type='lowpass';lp.frequency.setValueAtTime(300,t);lp.frequency.linearRampToValueAtTime(1400,t+dur*.8);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.018,t+dur*.4);g.gain.linearRampToValueAtTime(0,t+dur);o.connect(lp).connect(g).connect(comp);o.start(t);o.stop(t+dur+.1)}}};
+        const tick=()=>{while(mus.next<ctx.currentTime+.25){const i=mus.step,t=mus.next,bar=Math.floor(i/16)%4,s16=i%16,root=roots[bar];
+            if(s16%2===0)note(t,f(root),six*1.6,'sawtooth',s16%4===0?.22:.15,520);
+            if(s16===0)pad(t,root,six*16);
+            if([0,6,8,11].includes(s16))drum(t,s16===0?.9:.6,s16===0?62:72);
+            if(s16===12||s16===14)drum(t,.45,90);
+            const arp=[0,3,7,10,12,10,7,3];if(i%64>=32&&s16%2===1)note(t,f(root+24+arp[(s16>>1)%8]),six*.9,'square',.035,2400);
+            if(s16===15&&bar===3)note(t,f(root+31),six*6,'triangle',.06,3000);
+            mus.step++;mus.next+=six}};
+        tick();mus.timer=setInterval(tick,60)}
+      else if(this._mus){const m=this._mus;this._mus=null;clearInterval(m.timer);m.bus.gain.setTargetAtTime(0,ctx.currentTime,.4);setTimeout(()=>m.bus.disconnect(),2500)}}}})();
 
 /* ================= models ================= */
 const loader=new GLTFLoader();
 const cache={};
+const TANKER_P={id:'kc46',name:'KC-46A Pegasus',nation:'USA',file:'models/kc46.glb',yaw:0,len:50.5,hp:600,mil:6,ab:0,turn:.35,gun:null,msl:[],flr:0,eye:[0,'eye',.8],noz:[],nozR:.6};
+const ALLP=[...PLANES,TANKER_P];
 function bakeSkins(root){ // some files ship as skinned meshes; freeze them into plain meshes so clones sit where their parent puts them
   root.updateMatrixWorld(true);const list=[];root.traverse(o=>{if(o.isSkinnedMesh)list.push(o)});
   for(const sm of list){sm.skeleton.update();const g=sm.geometry.clone();const n=g.attributes.position.count;const arr=new Float32Array(n*3);const v=new THREE.Vector3();
@@ -369,13 +459,13 @@ async function fetchBin(urls,onp){let got=0;const total=0;const bufs=[];
   const all=new Uint8Array(got);let o=0;for(const c of bufs){all.set(c,o);o+=c.length}return all.buffer}
 function getModel(id,onp){
   if(cache[id])return cache[id];
-  cache[id]=(async()=>{const P=PLANES.find(p=>p.id===id);
+  cache[id]=(async()=>{const P=ALLP.find(p=>p.id===id);
     const buf=await fetchBin(id==='f14'?['models/f14.part0','models/f14.part1','models/f14.part2']:[P.file],onp);
     const gltf=await loader.parseAsync(buf,'');bakeSkins(gltf.scene);fixMaterials(gltf.scene);
     const M=prepModel(THREE,gltf.scene,P);
     M.root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
-    const box=M.box,size=box.getSize(new V3());
-    return{P,id,root:M.root,pts:{gun:M.gun,eye:M.eye,noz:M.noz},tpl:buildTemplate(M.root,id==='f14'),size,len:id==='f14'?19.1:P.len,span:size.x};
+    const box=M.box,size=box.getSize(new V3());M.root.updateMatrixWorld(true);const gb=new THREE.Box3().setFromObject(M.root,true);
+    return{P,id,root:M.root,pts:{gun:M.gun,eye:M.eye,noz:M.noz},tpl:buildTemplate(M.root,id==='f14'),size,gearH:-gb.min.y,len:id==='f14'?19.1:P.len,span:size.x};
   })();
   cache[id].catch(()=>{delete cache[id]});
   return cache[id];
@@ -385,8 +475,8 @@ function tintMats(root,color,f14){root.traverse(o=>{if(!o.isMesh)return;o.materi
 function fullInstance(M,paint){ // player / hangar: every node, own materials so the paint is per-instance
   const grp=new THREE.Group();const r=M.root.clone(true);grp.add(r);
   const f14=M.id==='f14';tintMats(r,paint,f14);let L,R;
-  if(f14){({L,R}=setupSweep(grp));r.traverse(o=>{if(/^vehicle#(gear|wheel)/.test(o.name))o.visible=false})}else{L=new THREE.Group();R=new THREE.Group();grp.add(L,R)}
-  return{grp,L,R};
+  const gearNodes=[];if(f14){({L,R}=setupSweep(grp));r.traverse(o=>{if(/^vehicle#(gear|wheel)/.test(o.name)){o.visible=false;gearNodes.push(o)}})}else{L=new THREE.Group();R=new THREE.Group();grp.add(L,R)}
+  return{grp,L,R,gearNodes};
 }
 function lightInstance(M,tint){ // AI: three merged groups, shared geometry
   const grp=new THREE.Group(),L=new THREE.Group(),R=new THREE.Group();
@@ -419,7 +509,7 @@ class Aircraft{
   constructor(M,o){
     this.M=M;this.P=M.P;this.id=M.id;this.team=o.team;this.name=o.name;this.isPlayer=!!o.player;
     const inst=o.player?fullInstance(M,o.paint||'#ffffff'):lightInstance(M,null);
-    this.grp=inst.grp;this.L=inst.L;this.R=inst.R;scene.add(this.grp);
+    this.grp=inst.grp;this.L=inst.L;this.R=inst.R;this.gearNodes=inst.gearNodes||[];scene.add(this.grp);this.gear=false;this.ground=null;this.fuel=1;this.fuelTime=this.P.fuel||(this.P.id==='a10'?620:this.P.id==='f5'?330:430);
     if(o.player)this.grp.traverse(x=>{if(x.isMesh)x.castShadow=x.receiveShadow=true});
     if(o.player&&M.id==='f14'){const f=new THREE.PointLight('#dfe8ff',1.4,4,2);f.position.set(0,1.75,6.9);this.grp.add(f)}
     this.st=o.stats||statsFor(this.P,this.id,false);
@@ -430,24 +520,26 @@ class Aircraft{
     this.mslOffsets=[new V3(M.span*.22,-.8,0),new V3(-M.span*.22,-.8,0)];
     this.rearm();
   }
-  rearm(){this.hp=this.st.hp;this.ammo=this.st.gun?this.st.gun.ammo:0;this.msl=this.st.msl.map(m=>({type:m[0],n:m[1]}));this.flr=this.st.flr;this.mslSide=0}
+  rearm(){this.fuel=1;this.hp=this.st.hp;this.ammo=this.st.gun?this.st.gun.ammo:0;this.msl=this.st.msl.map(m=>({type:m[0],n:m[1]}));this.flr=this.st.flr;this.mslSide=0}
   fwd(o=new V3()){return o.set(0,0,1).applyQuaternion(this.q)}
   up(o=new V3()){return o.set(0,1,0).applyQuaternion(this.q)}
   right(o=new V3()){return o.set(-1,0,0).applyQuaternion(this.q)}
   place(p,yaw){this.pos.copy(p);this.q.setFromEuler(new THREE.Euler(0,yaw,0));this.dir.set(0,0,1).applyQuaternion(this.q);this.speed=Math.min(260,topSpeed(this.st)/3.6*.8);this.sink=0;this.av.set(0,0,0);
-    this.alive=true;this.dead=0;this.grp.visible=true;this.thr=this.st.ab>0?.9:1;this.rearm()}
+    this.alive=true;this.dead=0;this.grp.visible=true;this.thr=this.st.ab>0?.9:1;this.rearm();releaseRunway(this);this.ground=null;this.setGear(false)}
+  setGear(v){this.gear=v;for(const n of this.gearNodes)n.visible=v}
   maxThr(){return this.st.ab>0?1.1:1}
   rates(){const s=this.speed,t=this.st.turn;let sf=clamp((s-50)/140,0,1);if(s>400)sf*=lerp(1,.65,clamp((s-400)/250,0,1));
     return{p:Math.max(Math.min(.95*sf*t,13*t*G/Math.max(s,1)),.05),y:Math.max(.3*sf,.05),r:3.4*Math.max(sf,.3)*(.7+.3*t)}}
   fly(dt,c,mult=1){
-    const fwd=this.fwd(_v3),s=this.speed,lf=clamp((s-58)/70,0,1),R=this.rates();
+    const fwd=this.fwd(_v3),s=this.speed,lf=clamp((s-(this.gear?44:58))/65,0,1),R=this.rates();
     const tgt=_v2.set(-c.pitch*R.p*mult*(c.pitch<0?.6:1),-c.yaw*R.y,c.roll*R.r*mult);
     this.av.lerp(tgt,1-Math.exp(-dt*(this.isPlayer?9:5)));
     const ang=this.av.length();if(ang>1e-6){_q.setFromAxisAngle(_v.copy(this.av).divideScalar(ang),ang*dt);this.q.multiply(_q).normalize()}
     this.g=1+Math.abs(this.av.x)*s/G*(this.av.x<0?1:-1);
-    const ab=this.st.ab>0?clamp((this.thr-1)/.1,0,1):0;
-    const thrust=Math.min(this.thr,1)*this.st.mil+ab*this.st.ab;
-    const drag=1.35e-4*s*s+.0011*Math.max(this.g-1,0)**2*s*.35;
+    const dry=this.fuel<=0;const ab=!dry&&this.st.ab>0?clamp((this.thr-1)/.1,0,1):0;
+    const thrust=dry?0:Math.min(this.thr,1)*this.st.mil+ab*this.st.ab;
+    const drag=1.35e-4*s*s*(this.gear?1.9:1)+.0011*Math.max(this.g-1,0)**2*s*.35;
+    if(!dry)this.fuel=Math.max(0,this.fuel-(.25+.75*Math.min(this.thr,1)+2.2*ab)/this.fuelTime*dt*(st.mode==='tutorial'?.3:1));
     this.speed=clamp(s+(thrust-drag-G*fwd.y)*dt,0,900);
     this.dir.lerp(fwd,1-Math.exp(-dt*(.4+3.2*lf))).normalize();
     this.sink+=G*(1-lf)*dt;this.sink*=Math.exp(-dt*lf*1.5);
@@ -456,9 +548,50 @@ class Aircraft{
     this.pos.addScaledVector(this.vel,dt);
     if(this.P.sweep){this.sweep=lerp(this.sweep,smooth(230,420,s)*.84,1-Math.exp(-dt*1.2));this.L.rotation.y=this.sweep;this.R.rotation.y=-this.sweep}
     this.ab=ab;
-    if(this.fmat){this.fmat.uniforms.t.value+=dt;this.fmat.uniforms.ab.value=ab;const len=.5+Math.min(this.thr,1)*.8+ab*3.4+Math.random()*.3*ab;for(const f of this.flames){const r=f.userData.r*(1+ab*.15);f.scale.set(r,r,len)}}
+    this.updFlames(dt)}
+  updFlames(dt){const ab=this.ab;if(this.fmat){for(const f of this.flames)f.visible=this.fuel>0;this.fmat.uniforms.t.value+=dt;this.fmat.uniforms.ab.value=ab;const len=.5+Math.min(this.thr,1)*.8+ab*3.4+Math.random()*.3*ab;for(const f of this.flames){const r=f.userData.r*(1+ab*.15);f.scale.set(r,r,len)}}
   }
   gunWorld(i){return this.M.pts.gun[i].clone().applyQuaternion(this.q).add(this.pos)}
+}
+
+/* ================= landing, servicing, takeoff ================= */
+function releaseRunway(u){for(const b of BASES)if(b.occupant===u){b.occupant=null}}
+function teamName(t){return t===0?'블루':'레드'}
+function groundContact(u){
+  const b=runwayAt(u.pos);if(!u.gear||!b||b.team!==u.team)return false;
+  const f=u.fwd(new V3()),roll=Math.abs(Math.asin(clamp(u.right(_v).y,-1,1)));
+  if(!(u.vel.y>-15&&u.speed<150&&roll<.5&&Math.abs(f.x)>.82))return false;
+  if(b.occupant&&b.occupant!==u&&b.occupant.alive){u.pos.y=b.y+u.M.gearH+.6;u.sink=0;u.dir.y=Math.max(u.dir.y,.06);u.dir.normalize();
+    if(u===player&&!st.rwyMsgT){feed(`활주로 사용 중 (${b.occupant.name}) · 대기 후 다시 접근`,'#ffb547');st.rwyMsgT=4}return true}
+  b.occupant=u;u.ground={b,phase:'roll',t:0,sx:Math.sign(f.x)||1};u.sink=0;u.av.set(0,0,0);u.thr=0;
+  feed(`${u.name} ${teamName(u.team)} 기지 착륙 · 정비 시작`,u.team===0?'#4aa8ff':'#ff4a3d');return true}
+function groundUpdate(u,dt){
+  const g=u.ground,b=g.b;let pitch=0;
+  const remain=b.len/2-g.sx*(u.pos.x-b.x);
+  if(g.phase==='roll'){const need=u.speed*u.speed/(2*Math.max(remain-60,15));u.speed=Math.max(0,u.speed-Math.max(16+u.speed*.05,need)*dt);if(u.speed<.5){u.speed=0;g.phase='service';g.t=0}}
+  else if(g.phase==='service'){g.t+=dt;const k=dt/SERVICE_T;u.hp=Math.min(u.st.hp,u.hp+u.st.hp*k);u.fuel=Math.min(1,u.fuel+k);
+    if(g.t>=SERVICE_T){const hp=u.st.hp;u.rearm();u.hp=hp;g.phase='ready';feed(`${u.name} 정비 완료 (수리·연료·무장)`,u.team===0?'#7dffa0':'#ff8a7d')}}
+  else if(g.phase==='ready'){u.speed=0;if(!u.isPlayer||u.thr>=.95){g.phase='takeoff';u.thr=u.maxThr()}}
+  else if(g.phase==='takeoff'){const ab=u.st.ab>0?clamp((u.thr-1)/.1,0,1):0;u.ab=ab;u.speed+=((Math.min(u.thr,1)*u.st.mil+ab*u.st.ab)*1.15-1.35e-4*u.speed*u.speed*1.9)*dt;
+    pitch=smooth(55,82,u.speed)*.14;if(u.speed>82||remain<120)liftoff(u)}
+  if(!u.ground)return;
+  u.pos.x+=g.sx*u.speed*dt;u.pos.z=lerp(u.pos.z,b.z,1-Math.exp(-dt*1.5));u.pos.y=b.y+u.M.gearH+.35;
+  u.q.setFromEuler(new THREE.Euler(-pitch,g.sx>0?Math.PI/2:-Math.PI/2,0,'YXZ'));u.dir.set(0,0,1).applyQuaternion(u.q);u.vel.copy(u.dir).multiplyScalar(u.speed);u.g=1;
+  if(g.phase!=='takeoff')u.ab=0;u.updFlames(dt);
+}
+function liftoff(u){const b=u.ground.b;u.ground=null;b.occupant=null;u.sink=0;u.av.set(0,0,0);u.speed=Math.max(u.speed,84);u.dir.set(0,0,1).applyQuaternion(u.q);u.dir.y=Math.max(u.dir.y,.1);u.dir.normalize();
+  feed(`${u.name} 이륙 · ${teamName(b.team)} 활주로 비었음`,b.team===0?'#4aa8ff':'#ff4a3d');
+  if(u===player){aimToNose();st.aimPitch=.18;feed('G로 착륙 기어를 올리세요','#8c9aa6')}else{u.ai.gearT=4;u.ai.mode='attack'}}
+function finalApproach(e,dt){
+  const b=baseOf(e.team),A=e.ai,tdx=b.x-b.len/2+180;e.setGear(true);
+  e.speed=lerp(e.speed,96,1-Math.exp(-dt*.6));e.thr=.5;
+  const ax=Math.min(e.pos.x+700,tdx+400),gy=x=>b.y+e.M.gearH+Math.max(0,tdx-x)*.055;
+  const tgt=new V3(ax,Math.max(gy(ax),ground(ax,b.z)+(ax<tdx-2500?150:0)),b.z);
+  const want=tgt.sub(e.pos).normalize();const tq=new Q().setFromRotationMatrix(new THREE.Matrix4().lookAt(_v.set(0,0,0),_v2.copy(want).negate(),_v3.set(0,1,0)));
+  e.q.slerp(tq,1-Math.exp(-dt*1.4));e.dir.set(0,0,1).applyQuaternion(e.q);e.vel.copy(e.dir).multiplyScalar(e.speed);e.pos.addScaledVector(e.vel,dt);e.g=1;e.ab=0;e.updFlames(dt);
+  if(e.pos.x>=tdx&&e.pos.y<gy(e.pos.x)+8){e.pos.y=b.y+e.M.gearH+.35;e.q.setFromEuler(new THREE.Euler(0,Math.PI/2,0));e.ground={b,phase:'roll',t:0,sx:1};
+    feed(`${e.name} ${teamName(e.team)} 기지 착륙 · 정비 시작`,e.team===0?'#4aa8ff':'#ff4a3d')}
+  else if(e.pos.x>b.x+b.len/2){A.mode='rtb';releaseRunway(e)}
 }
 
 /* steering: rate-based mouse-aim instructor */
@@ -492,7 +625,7 @@ const mslGeo=new THREE.CylinderGeometry(.09,.09,3,8).rotateX(Math.PI/2),mslMat=n
 
 /* ================= game state ================= */
 const st={mode:'hangar',view:'tp',aimYaw:0,aimPitch:0,freeYaw:0,freePitch:0,slot:0,lockT:0,lockTarget:null,locked:false,feed:[],hitT:0,dmgT:0,shake:0,
-  fireHeld:false,flareCd:0,mslCd:0,warn:false,rwr:0,paused:true,score:[0,0],time:0,goal:20,timeLimit:420,over:false,tut:null};
+  fireHeld:false,flareCd:0,mslCd:0,warn:false,rwr:0,paused:true,tanker:null,tankerCd:0,refuel:false,rwyMsgT:0,score:[0,0],time:0,goal:20,timeLimit:420,over:false,tut:null};
 const keys={};
 const CALL={0:['바이퍼','고스트','루스터','팰컨'],1:['이반','보리스','드미트리','세르게이','알렉세이']};
 function feed(t,c='#e9eef2'){st.feed.unshift({t,c,life:6});if(st.feed.length>6)st.feed.pop()}
@@ -512,8 +645,8 @@ async function withLoading(ids){
 async function startMatch(){
   const pi=planeIndex(S.sel);const lo=Math.max(0,pi-2),hi=Math.min(PLANES.length-1,pi+2);
   const pool=PLANES.slice(lo,hi+1).map(p=>p.id);
-  const allyT=pick(pool),enemyT=pick(pool);
-  const Ms=await withLoading([S.sel,allyT,enemyT]);
+  const allyT=pick(pool),enemyT=pick(pool);st.allyT=allyT;
+  const Ms=await withLoading([S.sel,allyT,enemyT]);getModel('kc46').catch(()=>{});
   clearWorld();st.mode='match';st.score=[0,0];st.time=0;st.over=false;st.tut=null;resetPlayerState();
   const pst=statsFor(PLANES[pi],S.sel,true);
   player=new Aircraft(Ms[S.sel],{team:0,name:'나',player:true,paint:paintColor(S.sel),stats:pst});units.push(player);
@@ -524,22 +657,23 @@ async function startMatch(){
   enterFlight();
 }
 async function startTutorial(){
-  const Ms=await withLoading([S.sel,'su27']);
+  const Ms=await withLoading([S.sel,'su27']);st.allyT=S.sel;getModel('kc46').catch(()=>{});
   clearWorld();st.mode='tutorial';st.over=false;resetPlayerState();
   player=new Aircraft(Ms[S.sel],{team:0,name:'나',player:true,paint:paintColor(S.sel),stats:statsFor(PLANES[planeIndex(S.sel)],S.sel,true)});units.push(player);
   player.place(new V3(0,2600,9000),Math.PI);aimToNose();
   st.tut={step:0,t:0,turned:0,lastYaw:st.aimYaw,views:0,drone:null,M:Ms.su27};
   enterFlight();
 }
-function resetPlayerState(){Object.assign(st,{view:'tp',lockT:0,lockTarget:null,locked:false,feed:[],hitT:0,dmgT:0,shake:0,fireHeld:false,flareCd:0,mslCd:0,warn:false,rwr:0,slot:0});camera.near=.5;camera.fov=68;camera.updateProjectionMatrix()}
+function resetPlayerState(){for(const b of BASES)b.occupant=null;Object.assign(st,{tanker:null,tankerCd:0,refuel:false,rwyMsgT:0,view:'tp',lockT:0,lockTarget:null,locked:false,feed:[],hitT:0,dmgT:0,shake:0,fireHeld:false,flareCd:0,mslCd:0,warn:false,rwr:0,slot:0});camera.near=.5;camera.fov=68;camera.updateProjectionMatrix()}
 function aimToNose(){const f=player.fwd(new V3());st.aimYaw=Math.atan2(f.x,f.z);st.aimPitch=Math.asin(clamp(f.y,-1,1))}
 function newAI(){return{mode:'attack',t:0,brk:1,fireCd:rnd(0,2),mslCd:rnd(3,9),lockT:0,target:null,retarget:0,skill:clamp(.6+planeIndex(S.sel)*.025,0,.9),burst:0,gunT:0}}
-function enterFlight(){$('hangar').hidden=true;st.paused=false;sfx.init();sfx.resume();lockPointer();last=performance.now()}
+function enterFlight(){sfx.music(false);$('hangar').hidden=true;st.paused=false;sfx.init();sfx.resume();if(!isMobile())lockPointer();$('touch').hidden=!isMobile();last=performance.now()}
 function lockPointer(){try{const r=glc.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 
 function damage(u,d,src){if(!u.alive)return;u.hp-=d;if(u===player){st.dmgT=.35;st.shake=Math.min(st.shake+.4,1.2)}if(u.hp<=0)kill(u,src)}
 function kill(u,src){
-  u.alive=false;u.dead=10;u.spin=rnd(-2.5,2.5);u.thr=0;u.deaths++;u.respawnT=0;explosion(u.pos,1.1,u.vel);
+  u.alive=false;u.dead=10;u.spin=rnd(-2.5,2.5);u.thr=0;u.deaths++;u.respawnT=0;explosion(u.pos,1.1,u.vel);releaseRunway(u);u.ground=null;
+  if(u.support){feed(`${u.name} 격추됨`,'#ff4a3d');return}
   const credit=src&&src!==u&&src.team!==u.team?src:null;
   if(st.mode==='match'){st.score[1-u.team]++;if(credit)credit.kills++}
   if(credit===player){st.kills=(st.kills||0)+1}
@@ -551,33 +685,71 @@ function kill(u,src){
 
 /* ================= input ================= */
 addEventListener('keydown',e=>{keys[e.code]=true;
-  if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&st.mode!=='hangar')e.preventDefault();
+  if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','F1','Enter'].includes(e.code)&&st.mode!=='hangar'&&e.target.tagName!=='INPUT')e.preventDefault();
   if(st.mode==='hangar'||st.paused)return;
   if(e.code==='KeyV'){st.view=st.view==='tp'?'ck':'tp';camera.near=st.view==='ck'?.03:.5;camera.fov=st.view==='ck'?78:68;camera.updateProjectionMatrix();if(st.tut)st.tut.views++}
   if(e.code==='Digit1')st.slot=0;if(e.code==='Digit2'&&player&&player.msl.length>1)st.slot=1;
   if(e.code==='KeyM'){const m=sfx.toggle();feed(m?'소리 끔':'소리 켬')}
   if(e.code==='KeyF')dropFlares(player);
   if(e.code==='Space')playerMissile();
+  if(e.code==='KeyG')toggleGear();
+  if(e.code==='F1')callTanker();
 });
 addEventListener('keyup',e=>{keys[e.code]=false});
 glc.addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousedown',e=>{if(st.mode==='hangar'){if(e.target===glc){hDrag=e.clientX}return}if(st.paused)return;if(e.button===0)st.fireHeld=true;if(e.button===2)playerMissile()});
-addEventListener('mouseup',e=>{hDrag=null;if(e.button===0)st.fireHeld=false});
+glc.addEventListener('pointerdown',e=>{if(st.mode==='hangar'){hDrag=e.clientX;try{glc.setPointerCapture(e.pointerId)}catch(_){}}});
+glc.addEventListener('pointermove',e=>{if(st.mode==='hangar'&&hDrag!=null){hYaw+=(e.clientX-hDrag)*.008;hDrag=e.clientX}});
+glc.addEventListener('pointerup',()=>{hDrag=null});
+addEventListener('mousedown',e=>{if(st.mode==='hangar'||isMobile())return;if(st.paused)return;if(e.button===0)st.fireHeld=true;if(e.button===2)playerMissile()});
+addEventListener('mouseup',e=>{if(e.button===0)st.fireHeld=false});
 addEventListener('wheel',e=>{if(st.paused||!player||st.mode==='hangar')return;player.thr=clamp(player.thr-Math.sign(e.deltaY)*.05,0,player.maxThr())},{passive:true});
 addEventListener('mousemove',e=>{
-  if(st.mode==='hangar'){if(hDrag!=null){hYaw+=(e.clientX-hDrag)*.008;hDrag=e.clientX}return}
+  if(st.mode==='hangar'||isMobile())return;
   if(st.paused)return;const s=.0021*S.sens/5;
   if(keys.KeyC){st.freeYaw-=e.movementX*s;st.freePitch=clamp(st.freePitch-e.movementY*s,-1.4,1.4)}
   else{st.aimYaw-=e.movementX*s;st.aimPitch=clamp(st.aimPitch-e.movementY*s,-1.5,1.5)}});
-document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&st.mode!=='hangar'&&!st.over)pauseGame(true)});
-function pauseGame(p){st.paused=p;$('pause').hidden=!p;if(p){sfx.gun(false);sfx.tone(null);st.fireHeld=false}}
-$('btnResume').onclick=()=>{pauseGame(false);lockPointer();last=performance.now()};
+document.addEventListener('pointerlockchange',()=>{if(!isMobile()&&!document.pointerLockElement&&st.mode!=='hangar'&&!st.over)pauseGame(true)});
+/* touch controls */
+{
+  const joy=$('joy'),knob=$('knob');let jid=null;
+  const setJ=e=>{const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R=r.width/2;let dx=(e.clientX-cx)/R,dy=(e.clientY-cy)/R;const L=Math.hypot(dx,dy);if(L>1){dx/=L;dy/=L}
+    touch.jx=dx;touch.jy=dy;knob.style.transform=`translate(${dx*R*.6}px,${dy*R*.6}px)`};
+  joy.addEventListener('pointerdown',e=>{jid=e.pointerId;joy.setPointerCapture(jid);setJ(e)});
+  joy.addEventListener('pointermove',e=>{if(e.pointerId===jid)setJ(e)});
+  const endJ=e=>{if(e.pointerId!==jid)return;jid=null;touch.jx=touch.jy=0;knob.style.transform=''};joy.addEventListener('pointerup',endJ);joy.addEventListener('pointercancel',endJ);
+  const hold=(id,k)=>{const b=$(id);b.addEventListener('pointerdown',e=>{e.preventDefault();touch[k]=true;b.classList.add('on');try{b.setPointerCapture(e.pointerId)}catch(_){}});
+    for(const ev of['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,()=>{touch[k]=false;b.classList.remove('on')})};
+  hold('tFire','fire');hold('tUp','thrUp');hold('tDn','thrDn');
+  const tap=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();if(!st.paused)fn()});
+  tap('tMsl',playerMissile);tap('tFlr',()=>dropFlares(player));tap('tGear',toggleGear);tap('tTank',callTanker);
+  tap('tSw',()=>{if(player&&player.msl.length>1)st.slot=1-st.slot});
+  tap('tView',()=>{st.view=st.view==='tp'?'ck':'tp';camera.near=st.view==='ck'?.03:.5;camera.fov=st.view==='ck'?78:68;camera.updateProjectionMatrix();if(st.tut)st.tut.views++});
+  $('tPause').addEventListener('pointerdown',e=>{e.preventDefault();pauseGame(true)});
+  document.addEventListener('touchmove',e=>{if(st.mode!=='hangar')e.preventDefault()},{passive:false});
+}
+function chooseDevice(d){S.device=d;save();$('devOv').hidden=true;applyDevice();renderHangar()}
+function applyDevice(){const m=isMobile();renderer.setPixelRatio(m?Math.min(devicePixelRatio,1):Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=!m;resize();$('btnDev').textContent=m?'조작: 모바일':'조작: PC'}
+$('devMobile').onclick=()=>chooseDevice('mobile');$('devPC').onclick=()=>chooseDevice('pc');
+function pauseGame(p){st.paused=p;$('pause').hidden=!p;if(p){sfx.gun(false);sfx.tone(null);st.fireHeld=false;touch.fire=touch.thrUp=touch.thrDn=false}}
+$('btnResume').onclick=()=>{pauseGame(false);if(!isMobile())lockPointer();last=performance.now()};
 $('btnQuit').onclick=()=>{pauseGame(false);toHangar()};
 function dropFlares(u){if(!u||!u.alive||u.flr<=0)return;if(u===player){if(st.flareCd>0)return;st.flareCd=.9;if(st.tut)st.tut.flared=true}
   u.flr-=2;for(let i=0;i<2;i++){const v=u.vel.clone().multiplyScalar(.6).add(_v.set(rnd(-25,25),rnd(-30,-10),rnd(-25,25)));flares.push({p:u.pos.clone(),v,life:4})}
   for(const m of missiles)if(m.target===u&&m.s.ir&&Math.random()<.65)m.target={decoy:true,ref:flares[flares.length-1]};
   for(const m of missiles)if(m.target===u&&!m.s.ir&&Math.random()<.25)m.target=null;
   if(u===player)sfx.shot(300,.15,.15,'sawtooth')}
+function toggleGear(){if(!player||!player.alive||player.ground)return;player.setGear(!player.gear);sfx.shot(160,.35,.12,'sawtooth');feed(player.gear?'착륙 기어 내림 · 아군 기지 활주로에 착륙하면 정비':'착륙 기어 올림','#8c9aa6')}
+async function callTanker(){
+  if(!player||!player.alive||st.paused)return;if(st.tanker){feed('급유기가 이미 오고 있습니다','#8c9aa6');return}
+  if(st.tankerCd>0){feed(`급유기 재요청까지 ${Math.ceil(st.tankerCd)}초`,'#8c9aa6');return}
+  st.tankerCd=90;let MK,ME;try{MK=await getModel('kc46');ME=await getModel(st.allyT||player.id)}catch(e){feed('급유기를 불러오지 못했습니다','#ff4a3d');st.tankerCd=0;return}
+  if(!player)return;const f=player.fwd(new V3()).setY(0).normalize(),yaw=Math.atan2(f.x,f.z);const alt=clamp(player.pos.y,1500,4200);
+  const T=new Aircraft(MK,{team:player.team,name:'KC-46 급유기',stats:{hp:600,mil:6,ab:0,turn:.35,gun:null,msl:[],flr:0,lockMul:1,rangeMul:1,stealth:0}});
+  T.place(player.pos.clone().addScaledVector(f,2600).setY(alt),yaw);T.speed=170;T.support=true;T.ai={tanker:true,life:150,alt,yaw};units.push(T);
+  const esc=[];for(const sx of[1,-1]){const E=new Aircraft(ME,{team:player.team,name:sx>0?'호위기 1':'호위기 2'});E.place(T.pos.clone().add(_v.set(sx*90,15,-60).applyQuaternion(T.q)),yaw);E.speed=170;E.support=true;E.ai={...newAI(),escort:T,side:sx};units.push(E);esc.push(E)}
+  st.tanker={T,esc,full:0};feed('KC-46 급유기 호출 · 호위기 2대 동행','#7dffa0');sfx.shot(660,.2,.12,'triangle');
+}
+function dismissTanker(){const t=st.tanker;if(!t)return;for(const u of[t.T,...t.esc]){scene.remove(u.grp);u.alive=false}units=units.filter(u=>u!==t.T&&!t.esc.includes(u));st.tanker=null;feed('급유기 편대 귀환','#8c9aa6')}
 function playerMissile(){
   if(st.paused||!player||!player.alive||st.mslCd>0)return;const slot=player.msl[st.slot];if(!slot)return;
   if(slot.n<=0){feed(`${MSL[slot.type].name} 소진`,'#8c9aa6');return}
@@ -586,20 +758,28 @@ function playerMissile(){
 
 /* ================= update ================= */
 const ctl={pitch:0,roll:0,yaw:0};let last=performance.now();
+const touch={fire:false,thrUp:false,thrDn:false,jx:0,jy:0};
+const isMobile=()=>S.device==='mobile';
+const boomPoint=T=>new V3(0,-6,-(T.M.len*.5+22)).applyQuaternion(T.q).add(T.pos);
 const aimDir=(o=new V3())=>o.set(Math.sin(st.aimYaw)*Math.cos(st.aimPitch),Math.sin(st.aimPitch),Math.cos(st.aimYaw)*Math.cos(st.aimPitch));
 const enemiesOf=u=>units.filter(x=>x.alive&&x.team!==u.team);
 function update(dt){
   const P=player;st.time+=dt;
+  st.tankerCd-=dt;st.rwyMsgT=Math.max(0,st.rwyMsgT-dt);
   if(P.alive){
-    if(keys.ShiftLeft||keys.ShiftRight)P.thr=clamp(P.thr+dt*.5,0,P.maxThr());if(keys.KeyX)P.thr=clamp(P.thr-dt*.5,0,P.maxThr());
+    if(keys.ShiftLeft||keys.ShiftRight||touch.thrUp)P.thr=clamp(P.thr+dt*.5,0,P.maxThr());if(keys.Enter||keys.NumpadEnter||touch.thrDn)P.thr=clamp(P.thr-dt*.5,0,P.maxThr());
+    if(P.ground){groundUpdate(P,dt)}else{
+    if(isMobile()&&(touch.jx||touch.jy)){const k=S.sens/5;st.aimYaw-=touch.jx*Math.abs(touch.jx)*1.9*k*dt;st.aimPitch=clamp(st.aimPitch-touch.jy*Math.abs(touch.jy)*1.5*k*dt,-1.5,1.5)}
     const ad=aimDir(new V3());
     if(st.view==='ck'){const f=P.fwd(new V3()),a=f.angleTo(ad),lim=.5;if(a>lim){ad.copy(f).lerp(ad,lim/a).normalize();st.aimYaw=Math.atan2(ad.x,ad.z);st.aimPitch=Math.asin(clamp(ad.y,-1,1))}}
     steer(P,ad,ctl);
     const kp=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0),kr=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),ky=(keys.KeyE?1:0)-(keys.KeyQ?1:0);
     const manual=kp||kr||ky;if(manual){ctl.pitch=kp;ctl.roll=kr;ctl.yaw=ky}
     P.fly(dt,ctl);if(manual)aimToNose();
+    if(P.fuel<=0&&!st.dryMsg){feed('연료 고갈! 엔진 정지 · 활공해서 착륙하거나 추락합니다','#ff4a3d');st.dryMsg=true}if(P.fuel>0)st.dryMsg=false;
+    }
     // gun
-    const g=P.st.gun;st.fireT=(st.fireT||0)-dt;const firing=!!g&&st.fireHeld&&P.ammo>0;
+    const g=P.st.gun;st.fireT=(st.fireT||0)-dt;const firing=!!g&&(st.fireHeld||touch.fire)&&P.ammo>0&&!P.ground;
     if(firing){while(st.fireT<=0){st.fireT+=1/g.rate;P.ammo--;const mz=fireGun(P,.0035);fire.emit(mz,P.vel,g.dmg>12?1.8:1.2,g.dmg>12?3.6:2.6,.05,1,.7,.3,1,0);st.shake=Math.min(st.shake+.03,.35)}}
     else st.fireT=Math.max(st.fireT,0);
     sfx.gun(firing,g?Math.min(g.rate,100):50);
@@ -609,7 +789,10 @@ function update(dt){
     if(spec&&slot.n>0){let bestA=spec.cone;const f=P.fwd(new V3());for(const e of enemiesOf(P)){const d=_v.subVectors(e.pos,P.pos),dist=d.length();if(dist>spec.range*P.st.rangeMul)continue;const a=f.angleTo(d);if(a<bestA){bestA=a;best=e}}}
     if(best&&best===st.lockTarget)st.lockT+=dt;else{st.lockTarget=best;st.lockT=0}
     st.lockNeed=spec?spec.lock*P.st.lockMul*(1+(best?best.st.stealth:0)):1;st.locked=!!best&&st.lockT>st.lockNeed;
-    const gh=ground(P.pos.x,P.pos.z);if(P.pos.y<gh+3){P.pos.y=gh+3;P.hp=0;kill(P,null)}
+    const gh=ground(P.pos.x,P.pos.z);if(!P.ground&&P.pos.y<gh+(P.gear?P.M.gearH:3)){if(!groundContact(P)){P.pos.y=gh+3;P.hp=0;kill(P,null)}}
+    // air refuelling
+    st.refuel=false;const TK=st.tanker&&st.tanker.T;
+    if(TK&&TK.alive){const boom=boomPoint(TK);if(boom.distanceTo(P.pos)<70&&Math.abs(P.speed-TK.speed)<50&&P.fuel<1){st.refuel=true;P.fuel=Math.min(1,P.fuel+.12*dt);if(P.fuel>=1)feed('공중급유 완료','#7dffa0')}}
   }else sfx.gun(false);
   st.warn=missiles.some(m=>m.target===P&&m.owner!==P);
   sfx.engine(P.alive?Math.min(P.thr,1):-1,P.alive?P.ab:0,P.speed);
@@ -620,9 +803,11 @@ function update(dt){
     if(u.dead>0){u.dead-=dt;u.vel.y-=G*dt;u.pos.addScaledVector(u.vel,dt);u.q.multiply(_q.setFromAxisAngle(_v.set(0,0,1),u.spin*dt));
       u.smokeT=(u.smokeT||0)-dt;if(u.smokeT<=0){u.smokeT=.03;fire.emit(u.pos,_v.set(0,0,0),4,9,.5,1,.5,.15,.9,1);smoke.emit(u.pos,_v.set(rnd(-3,3),rnd(-3,3),rnd(-3,3)),6,28,6,.1,.1,.1,.75,.6,1)}
       if(u.pos.y<ground(u.pos.x,u.pos.z)+2||u.dead<=0){explosion(u.pos,1.4);u.dead=0;u.grp.visible=false}}
+    else if(u.support){}
     else if(st.mode==='match'&&!st.over){u.respawnT+=dt;if(u.respawnT>5){const s=spawnPoint(u.team);u.place(s.p,s.yaw);if(u.ai)u.ai=newAI();if(u===player){aimToNose();st.lockT=0}}}
     else if(st.mode==='tutorial'&&u===player){u.respawnT+=dt;if(u.respawnT>3){u.place(new V3(0,2600,9000),Math.PI);aimToNose()}}}
   for(const u of units)if(u.alive&&u.ai)ai(u,dt);
+  if(st.tanker){const t=st.tanker;t.T.ai.life-=dt;if(P.fuel>=1&&st.refuel===false&&t.T.alive&&t.T.pos.distanceTo(P.pos)<400)t.full+=dt;if(!t.T.alive||t.T.ai.life<=0||t.full>10)dismissTanker()}
   // bullets
   for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];b.o.copy(b.p);b.v.y-=G*dt;b.p.addScaledVector(b.v,dt);b.life-=dt;let hit=false;
     for(const t of units){if(!t.alive||t.team===b.owner.team)continue;const seg=_v.subVectors(b.p,b.o),to=_v2.subVectors(t.pos,b.o),L2=seg.lengthSq(),k=clamp(to.dot(seg)/L2,0,1);
@@ -655,6 +840,24 @@ function update(dt){
 
 function ai(e,dt){
   const A=e.ai;A.t-=dt;A.fireCd-=dt;A.mslCd-=dt;A.retarget-=dt;
+  if(e.ground){groundUpdate(e,dt);if(!e.ground)return;return}
+  if(A.gearT>0){A.gearT-=dt;if(A.gearT<=0)e.setGear(false)}
+  if(A.tanker){const d=new V3(Math.sin(A.yaw),(A.alt-e.pos.y)/2500,Math.cos(A.yaw)).normalize();e.thr=clamp(.75+(170-e.speed)*.04,0,1);e.fly(dt,steer(e,d,{}),.5);return}
+  if(A.escort&&A.escort.alive){const T0=A.escort;const threat=enemiesOf(e).find(x=>x.pos.distanceTo(T0.pos)<5000);
+    if(!threat){const slot=T0.pos.clone().add(_v.set(A.side*90,15,-60).applyQuaternion(T0.q)).addScaledVector(T0.vel,1.5);const d=slot.sub(e.pos);const dist=d.length();
+      e.thr=clamp(.8+(dist-120)/600+(T0.speed-e.speed)*.02,0,1);e.fly(dt,steer(e,d.normalize(),{}),.8);return}
+    A.target=threat;A.retarget=2}
+  if(A.mode==='final'){finalApproach(e,dt);return}
+  const needRTB=st.mode==='match'&&!e.support&&(e.fuel<.25||e.hp<e.st.hp*.35||((!e.st.gun||e.ammo<=0)&&e.msl.every(m=>m.n<=0)));
+  if(needRTB&&A.mode!=='rtb'&&A.mode!=='hold'){A.mode='rtb';feed(`${e.name} ${e.fuel<.25?'연료 부족':e.hp<e.st.hp*.35?'손상':'무장 소진'} · 기지 귀환`,e.team===0?'#4aa8ff':'#ff4a3d')}
+  if(A.mode==='rtb'||A.mode==='hold'){const b=baseOf(e.team),A0=new V3(b.x-b.len/2-7000,b.y+700,b.z);e.setGear(false);
+    let tgt=A0;const d0=A0.distanceTo(e.pos);
+    if(A.mode==='rtb'&&d0<1500){if(!b.occupant){b.occupant=e;A.mode='final';return}A.mode='hold';A.ang=0}
+    if(A.mode==='hold'){A.ang=(A.ang||0)+dt*.09;tgt=A0.clone().add(_v.set(Math.cos(A.ang)*1800,0,Math.sin(A.ang)*1800));if(!b.occupant){b.occupant=e;A.mode='final';return}}
+    tgt=tgt.clone();tgt.y=Math.max(tgt.y,ground(tgt.x,tgt.z)+500);const dir=tgt.sub(e.pos).normalize();
+    const agl=e.pos.y-ground(e.pos.x,e.pos.z);if(agl<350){dir.y=Math.max(dir.y,.5);dir.normalize()}
+    e.thr=e.fuel<.08?.6:.85;e.fly(dt,steer(e,dir,{}),A.skill);if(missiles.some(m=>m.target===e)&&Math.random()<dt*.3)dropFlares(e);
+    if(e.pos.y<ground(e.pos.x,e.pos.z)+3){e.hp=0;kill(e,null)}return}
   if(A.passive){ // training drone
     A.t-=0;const f=e.fwd(new V3());const d=f.clone().applyAxisAngle(_v.set(0,1,0),Math.sin(st.time*.25+A.ph)*.35);d.y=(2400-e.pos.y)/3000;e.fly(dt,steer(e,d.normalize(),{}),.6);return}
   if(!A.target||!A.target.alive||A.retarget<=0){A.retarget=rnd(3,6);let best=null,bs=1e9;const f=e.fwd(new V3());
@@ -683,7 +886,7 @@ function ai(e,dt){
   if(agl<400||aglA<300){dir.y=Math.max(dir.y,.55);dir.normalize()}
   if(Math.hypot(e.pos.x,e.pos.z)>26000)dir.set(-e.pos.x,0,-e.pos.z).normalize();
   const c=steer(e,dir,{});c.pitch*=A.skill;c.roll*=A.skill;e.thr=!T?.9:T.pos.distanceTo(e.pos)>4000?e.maxThr():T.pos.distanceTo(e.pos)<700?.75:1;
-  e.fly(dt,c,A.skill);if(e.pos.y<ground(e.pos.x,e.pos.z)+3){e.hp=0;kill(e,null)}
+  e.fly(dt,c,A.skill);if(e.pos.y<ground(e.pos.x,e.pos.z)+3&&!(e.gear&&groundContact(e))){e.hp=0;kill(e,null)}
   if(A.burst>0&&e.st.gun){A.burst-=dt;A.gunT-=dt;while(A.gunT<=0&&e.ammo>0){A.gunT+=1/Math.min(e.st.gun.rate,40);e.ammo--;fireGun(e,.012)}}
 }
 
@@ -704,19 +907,19 @@ function endMatch(res){
 }
 $('btnBack').onclick=()=>{$('result').hidden=true;toHangar()};
 const TUT=[
-  {t:'마우스를 움직이면 조준원(○)이 움직이고 기체가 그쪽으로 선회합니다. 크게 한 바퀴 돌아보세요.',done:s=>s.turned>Math.PI*1.2},
-  {t:'Shift로 스로틀을 끝까지 올리세요. 애프터버너가 있는 기체는 AB가 켜집니다. X는 감속입니다.',done:()=>player.thr>=player.maxThr()-.001},
-  {t:'V로 조종석 시점으로 바꿨다가 다시 V로 3인칭으로 돌아오세요.',done:s=>s.views>=2},
-  {t:'앞쪽 빨간 마름모가 적기 1대입니다. 앞의 작은 원(리드 표시)에 조준원을 맞추고 좌클릭으로 기관포를 쏴 격추하세요.',spawn:900,gun:true,done:s=>s.drone&&!s.drone.alive},
-  {t:'이번엔 미사일입니다. 적기 1대가 나타납니다. 적기를 조준원 근처에 두면 락온 원이 좁아지고 LOCK이 뜹니다. 그때 우클릭이나 Space로 발사하세요.',spawn:2600,done:s=>s.drone&&!s.drone.alive},
-  {t:'적이 나를 락온하면 "적 락온" 경고와 삐 소리가 납니다. 미사일이 날아오면 F로 플레어를 뿌려 피하세요. 지금 F를 눌러보세요.',done:s=>s.flared},
-  {t:'튜토리얼 완료! 격납고에서 기체를 고르고 5대5 데스매치에 나가보세요.',end:true},
+  {m:'왼쪽 조이스틱을 밀면 조준원(○)이 움직이고 기체가 그쪽으로 선회합니다. 크게 한 바퀴 돌아보세요.',t:'마우스를 움직이면 조준원(○)이 움직이고 기체가 그쪽으로 선회합니다. 크게 한 바퀴 돌아보세요.',done:s=>s.turned>Math.PI*1.2},
+  {m:'▲ 버튼을 눌러 스로틀을 끝까지 올리세요. ▼는 감속입니다.',t:'Shift로 스로틀을 끝까지 올리세요. 애프터버너가 있는 기체는 AB가 켜집니다. Enter는 감속입니다.',done:()=>player.thr>=player.maxThr()-.001},
+  {m:'위쪽 시점 버튼으로 조종석 시점으로 바꿨다가 다시 3인칭으로 돌아오세요.',t:'V로 조종석 시점으로 바꿨다가 다시 V로 3인칭으로 돌아오세요.',done:s=>s.views>=2},
+  {m:'앞쪽 빨간 마름모가 적기 1대입니다. 리드 원에 조준원을 맞추고 기관포 버튼을 누르세요. 한 발만 맞아도 떨어집니다.',t:'앞쪽 빨간 마름모가 적기 1대입니다. 앞의 작은 원(리드 표시)에 조준원을 맞추고 좌클릭으로 기관포를 쏘세요. 한 발만 맞아도 떨어집니다.',spawn:900,gun:true,done:s=>s.drone&&!s.drone.alive},
+  {m:'이번엔 미사일입니다. 적기 1대를 조준원 근처에 두면 LOCK이 뜹니다. 그때 미사일 버튼을 누르세요.',t:'이번엔 미사일입니다. 적기 1대가 나타납니다. 적기를 조준원 근처에 두면 락온 원이 좁아지고 LOCK이 뜹니다. 그때 우클릭이나 Space로 발사하세요.',spawn:2600,done:s=>s.drone&&!s.drone.alive},
+  {m:'적이 나를 락온하면 경고가 뜹니다. 미사일이 날아오면 플레어 버튼으로 피하세요. 지금 눌러보세요.',t:'적이 나를 락온하면 "적 락온" 경고와 삐 소리가 납니다. 미사일이 날아오면 F로 플레어를 뿌려 피하세요. 지금 F를 눌러보세요.',done:s=>s.flared},
+  {m:'튜토리얼 완료! 연료가 떨어지면 추락해요. 기어 버튼으로 기어를 내려 아군 기지 활주로에 착륙하면 정비, 급유기 버튼이면 공중급유기가 옵니다.',t:'튜토리얼 완료! 연료가 떨어지면 추락해요. G로 기어를 내려 아군 기지 활주로에 착륙하면 수리·급유·재무장, F1이면 공중급유기가 옵니다.',end:true},
 ];
 function tutorial(dt){
   const s=st.tut;const cur=TUT[s.step];s.t+=dt;
   let dy=st.aimYaw-s.lastYaw;s.turned+=Math.abs(dy)<1?Math.abs(dy):0;s.lastYaw=st.aimYaw;
   if(cur.spawn&&!s.drone){for(const u of units.filter(u=>u.team===1)){scene.remove(u.grp)}units=units.filter(u=>u.team!==1);const d=new Aircraft(s.M,{team:1,name:'적기',drone:true});units.push(d);
-    const f=player.fwd(new V3()).setY(0).normalize();d.place(player.pos.clone().addScaledVector(f,cur.spawn).setY(player.pos.y),Math.atan2(f.x,f.z));d.st={...d.st,hp:60};d.hp=60;d.thr=.7;d.speed=200;d.ai={passive:true,ph:Math.random()*6};
+    const f=player.fwd(new V3()).setY(0).normalize();d.place(player.pos.clone().addScaledVector(f,cur.spawn).setY(player.pos.y),Math.atan2(f.x,f.z));d.st={...d.st,hp:1};d.hp=1;d.thr=.7;d.speed=200;d.ai={passive:true,ph:Math.random()*6};
     if(!cur.gun){player.msl.forEach(m=>m.n=Math.max(m.n,2))}}
   if(cur.done&&cur.done(s)&&s.t>1.2){s.step++;s.t=0;if(s.drone){scene.remove(s.drone.grp);units=units.filter(u=>u!==s.drone);s.drone=null}sfx.shot(880,.15,.15,'triangle');
     if(TUT[s.step].end){if(!S.tut){S.tut=true;S.coins+=500;save();feed('튜토리얼 보상 +500 코인','#7dffa0')}setTimeout(()=>{if(st.mode==='tutorial'){try{document.exitPointerLock()}catch(e){}toHangar()}},5000)}}
@@ -790,17 +993,40 @@ function drawHUD(){
     if(P.speed<110){txt('STALL',cx,wy,20,amber,'center',700);wy+=26}
     if(Math.hypot(P.pos.x,P.pos.z)>27000)txt('작전 구역 이탈 · 복귀하세요',cx,wy,18,amber,'center',700);
   }
+  // base / tanker guidance
+  const mob=isMobile();
+  if(P.alive){const ob=baseOf(P.team);const showBase=P.gear||P.fuel<.35||P.hp<P.st.hp*.5||P.ground;
+    if(showBase){const bp=proj(_v3.set(ob.x,ob.y,ob.z).clone());const d=Math.hypot(ob.x-P.pos.x,ob.z-P.pos.z);
+      if(!bp.behind){hx.strokeStyle=green;hx.lineWidth=2;hx.strokeRect(bp.x-16,bp.y-5,32,10);hx.lineWidth=1.5;txt(`아군 기지 ${(d/1000).toFixed(1)}km`,bp.x,bp.y-12,12,green,'center');
+        txt(ob.occupant&&ob.occupant!==P?`활주로 사용 중 · ${ob.occupant.name}`:'활주로 비어 있음',bp.x,bp.y+24,11,ob.occupant&&ob.occupant!==P?amber:green,'center')}}
+    const TK=st.tanker&&st.tanker.T;if(TK&&TK.alive){const bpt=proj(boomPoint(TK));const d=boomPoint(TK).distanceTo(P.pos);
+      if(!bpt.behind){hx.strokeStyle=st.refuel?green:blue;hx.lineWidth=2;hx.beginPath();hx.arc(bpt.x,bpt.y,st.refuel?18:12,0,6.283);hx.stroke();hx.lineWidth=1.5;
+        txt(st.refuel?`급유 중 ${Math.round(P.fuel*100)}%`:`급유 위치 ${d<1000?Math.round(d)+'m':(d/1000).toFixed(1)+'km'} · 속도 맞추기`,bpt.x,bpt.y-22,12,st.refuel?green:blue,'center')}}
+    if(P.ground){const g=P.ground;let msg='',col=ink;if(g.phase==='roll'){msg='착륙 · 감속 중'}else if(g.phase==='service'){msg=`정비 중 ${Math.round(g.t/SERVICE_T*100)}% · 수리 · 연료 · 무장`;col=amber}
+      else if(g.phase==='ready'){msg=mob?'정비 완료 · ▲ 버튼으로 이륙':'정비 완료 · Shift로 이륙';col=green}else msg='이륙 활주 중';
+      hx.fillStyle='rgba(10,14,18,.7)';hx.fillRect(cx-190,Hh*.3-26,380,44);txt(msg,cx,Hh*.3,18,col,'center',700);
+      if(g.phase==='service'){hx.fillStyle='rgba(255,255,255,.15)';hx.fillRect(cx-150,Hh*.3+8,300,4);hx.fillStyle=amber;hx.fillRect(cx-150,Hh*.3+8,300*g.t/SERVICE_T,4)}}
+    const blink2=Math.floor(performance.now()/400)%2;
+    if(P.fuel<=0)txt('연료 고갈 · 엔진 정지',cx,Hh*.16,20,red,'center',700);
+    else if(P.fuel<.2&&blink2)txt(mob?'연료 부족 · 기어 내리고 기지 착륙 또는 급유기':'연료 부족 · G 착륙 정비 또는 F1 급유기',cx,Hh*.16,17,amber,'center',700);
+  }
   // flight data
-  const pX=20,pY=Hh-170;hx.fillStyle='rgba(10,14,18,.55)';hx.fillRect(pX-10,pY-26,190,160);
-  const rows=[['SPD',`${Math.round(P.speed*3.6)}`,'km/h'],['ALT',`${Math.round(P.pos.y)}`,'m'],['THR',P.thr>1.001?'AB':`${Math.round(P.thr*100)}`,P.thr>1.001?'':'%'],['G',P.g.toFixed(1),''],P.P.sweep?['WING',`${Math.round(20+P.sweep*57.3)}`,'°']:['HP',`${Math.max(0,Math.round(P.hp))}`,`/${P.st.hp}`]];
-  rows.forEach((r,i)=>{txt(r[0],pX,pY+i*26,12,dim);txt(r[1],pX+120,pY+i*26,20,r[1]==='AB'?amber:ink,'right');txt(r[2],pX+126,pY+i*26,11,dim)});
-  hx.fillStyle='rgba(255,255,255,.12)';hx.fillRect(pX+164,pY-14,6,120);const th=clamp(P.thr/1.1,0,1);hx.fillStyle=P.thr>1?amber:ink;hx.fillRect(pX+164,pY-14+120*(1-th),6,120*th);
-  hx.fillStyle='rgba(255,255,255,.12)';hx.fillRect(pX-10,pY+142,190,4);const hpk=clamp(P.hp/P.st.hp,0,1);hx.fillStyle=hpk>.5?green:hpk>.25?amber:red;hx.fillRect(pX-10,pY+142,190*hpk,4);
+  if(mob){const fc=P.fuel<.2?red:P.fuel<.35?amber:ink;const line=`${Math.round(P.speed*3.6)} km/h · ${Math.round(P.pos.y)} m · 스로틀 ${P.thr>1.001?'AB':Math.round(P.thr*100)+'%'} · 기어 ${P.gear?'내림':'올림'}`;
+    hx.fillStyle='rgba(10,14,18,.6)';hx.fillRect(cx-170,Hh-62,340,52);txt(line,cx,Hh-42,13,ink,'center');txt(`연료 ${Math.round(P.fuel*100)}%  ·  체력 ${Math.max(0,Math.round(P.hp))}/${P.st.hp}`,cx,Hh-22,13,fc,'center');
+    const hpk=clamp(P.hp/P.st.hp,0,1);hx.fillStyle=hpk>.5?green:hpk>.25?amber:red;hx.fillRect(cx-170,Hh-12,340*hpk,3)}
+  else{
+  const pX=mob?16:20,pY=mob?120:Hh-196;hx.fillStyle='rgba(10,14,18,.55)';hx.fillRect(pX-10,pY-26,190,mob?150:186);
+  const rows=[['SPD',`${Math.round(P.speed*3.6)}`,'km/h'],['ALT',`${Math.round(P.pos.y)}`,'m'],['THR',P.thr>1.001?'AB':`${Math.round(P.thr*100)}`,P.thr>1.001?'':'%'],['FUEL',`${Math.round(P.fuel*100)}`,'%'],['GEAR',P.gear?'DOWN':'UP',''],P.P.sweep?['WING',`${Math.round(20+P.sweep*57.3)}`,'°']:['G',P.g.toFixed(1),'']];
+  const rh=mob?20:26;rows.forEach((r,i)=>{const c=r[0]==='FUEL'?(P.fuel<.2?red:P.fuel<.35?amber:ink):r[1]==='AB'||r[1]==='DOWN'?amber:ink;txt(r[0],pX,pY+i*rh,12,dim);txt(r[1],pX+120,pY+i*rh,mob?16:20,c,'right');txt(r[2],pX+126,pY+i*rh,11,dim)});
+  hx.fillStyle='rgba(255,255,255,.12)';hx.fillRect(pX+164,pY-14,6,rh*5.5);const th=clamp(P.thr/1.1,0,1);hx.fillStyle=P.thr>1?amber:ink;hx.fillRect(pX+164,pY-14+rh*5.5*(1-th),6,rh*5.5*th);
+  const hb=pY+rh*6-6;hx.fillStyle='rgba(255,255,255,.12)';hx.fillRect(pX-10,hb,190,4);const hpk=clamp(P.hp/P.st.hp,0,1);hx.fillStyle=hpk>.5?green:hpk>.25?amber:red;hx.fillRect(pX-10,hb,190*hpk,4);}
   // weapons
+  if(mob){$('tMsl').innerHTML=P.msl[st.slot]?`${MSL[P.msl[st.slot].type].name.replace(/-.*$/,'')}<small>${P.msl[st.slot].n}</small>`:'미사일';$('tFire').innerHTML=P.st.gun?`기관포<small>${P.ammo}</small>`:'기관포<small>없음</small>';$('tFlr').innerHTML=`플레어<small>${P.flr}</small>`;$('tGear').classList.toggle('on',P.gear)}
+  else{
   const items=[];if(P.st.gun)items.push([P.st.gun.name,P.ammo,st.fireHeld]);
   P.msl.forEach((m,i)=>items.push([`${MSL[m.type].name}  [${i+1}]`,m.n,st.slot===i]));items.push(['FLARE  [F]',P.flr,false]);
   const bw=132,wy2=Hh-34;items.forEach((it,i)=>{const x=cx+(i-(items.length-1)/2)*(bw+8);hx.fillStyle=it[2]?'rgba(255,181,71,.18)':'rgba(10,14,18,.55)';hx.fillRect(x-bw/2,wy2-22,bw,36);
-    if(it[2]){hx.strokeStyle=amber;hx.strokeRect(x-bw/2+.5,wy2-21.5,bw-1,35)}txt(it[0],x-bw/2+8,wy2-6,10,dim);txt(String(it[1]),x+bw/2-8,wy2+8,18,it[1]>0?ink:red,'right')});
+    if(it[2]){hx.strokeStyle=amber;hx.strokeRect(x-bw/2+.5,wy2-21.5,bw-1,35)}txt(it[0],x-bw/2+8,wy2-6,10,dim);txt(String(it[1]),x+bw/2-8,wy2+8,18,it[1]>0?ink:red,'right')});}
   // team bar
   if(st.mode==='match'){const[b,r]=st.score,bw2=Math.min(420,W*.5),bx=cx-bw2/2,by=16;
     hx.fillStyle='rgba(10,14,18,.6)';hx.fillRect(bx-60,by-6,bw2+120,44);
@@ -813,19 +1039,20 @@ function drawHUD(){
   // feed + roster
   const fy=st.mode==='match'?78:30;st.feed.forEach((f,i)=>{hx.globalAlpha=clamp(f.life,0,1);txt(f.t,W-20,fy+i*22,13,f.c,'right');hx.globalAlpha=1});
   // radar
-  const rr=74,rx=W-rr-20,ry=Hh-rr-64;hx.fillStyle='rgba(10,14,18,.55)';hx.beginPath();hx.arc(rx,ry,rr,0,6.283);hx.fill();hx.strokeStyle='rgba(233,238,242,.2)';
+  if(!mob){const rr=74,rx=W-rr-20,ry=Hh-rr-64;hx.fillStyle='rgba(10,14,18,.55)';hx.beginPath();hx.arc(rx,ry,rr,0,6.283);hx.fill();hx.strokeStyle='rgba(233,238,242,.2)';
   hx.beginPath();hx.arc(rx,ry,rr*.5,0,6.283);hx.stroke();hx.beginPath();hx.arc(rx,ry,rr,0,6.283);hx.stroke();const hdg=Math.atan2(P.fwd(_v).x,_v.z);
   for(const e of units){if(!e.alive||e===P)continue;const foe=e.team!==P.team;if(foe&&e.st.stealth&&e.pos.distanceTo(P.pos)>9000*(1-e.st.stealth))continue;
     const dx=e.pos.x-P.pos.x,dz=e.pos.z-P.pos.z,a=Math.atan2(dx,dz)-hdg,r=Math.min(Math.hypot(dx,dz)/12000,1)*rr;hx.fillStyle=foe?red:blue;hx.fillRect(rx-Math.sin(a)*r-3,ry-Math.cos(a)*r-3,6,6)}
   for(const m of missiles){if(m.target!==P)continue;const dx=m.p.x-P.pos.x,dz=m.p.z-P.pos.z,a=Math.atan2(dx,dz)-hdg,r=Math.min(Math.hypot(dx,dz)/12000,1)*rr;hx.fillStyle=amber;hx.fillRect(rx-Math.sin(a)*r-2,ry-Math.cos(a)*r-2,4,4)}
-  hx.fillStyle=ink;hx.beginPath();hx.moveTo(rx,ry-7);hx.lineTo(rx+5,ry+5);hx.lineTo(rx-5,ry+5);hx.fill();txt('12 km',rx,ry+rr+16,11,dim,'center');
+  for(const b of BASES){const dx=b.x-P.pos.x,dz=b.z-P.pos.z,a=Math.atan2(dx,dz)-hdg,r=Math.min(Math.hypot(dx,dz)/12000,1)*rr;hx.strokeStyle=b.team===P.team?green:red;hx.strokeRect(rx-Math.sin(a)*r-5,ry-Math.cos(a)*r-3,10,6)}
+  hx.fillStyle=ink;hx.beginPath();hx.moveTo(rx,ry-7);hx.lineTo(rx+5,ry+5);hx.lineTo(rx-5,ry+5);hx.fill();txt('12 km',rx,ry+rr+16,11,dim,'center');}
   if(st.dmgT>0){const g=hx.createRadialGradient(cx,cy,Math.min(W,Hh)*.3,cx,cy,Math.max(W,Hh)*.7);g.addColorStop(0,'rgba(255,40,30,0)');g.addColorStop(1,`rgba(255,40,30,${st.dmgT})`);hx.fillStyle=g;hx.fillRect(0,0,W,Hh)}
   if(!P.alive&&!st.over){hx.fillStyle='rgba(0,0,0,.35)';hx.fillRect(0,cy-50,W,100);txt('격추됨',cx,cy,34,red,'center',700);
     if(P.respawnT>0)txt(`${Math.max(0,Math.ceil((st.mode==='match'?5:3)-P.respawnT))}초 후 재출격`,cx,cy+30,15,ink,'center')}
   // tutorial card
   if(st.tut){const s=st.tut,cur=TUT[s.step];const w=Math.min(560,W-40),x=cx;hx.fillStyle='rgba(10,14,18,.78)';hx.fillRect(x-w/2,70,w,92);hx.fillStyle=amber;hx.fillRect(x-w/2,70,3,92);
-    txt(`튜토리얼 ${Math.min(s.step+1,TUT.length-1)} / ${TUT.length-1}`,x-w/2+16,92,11,amber,'left',600);wrapTxt(cur.t,x,118,w-40,15,ink)}
-  txt(st.view==='ck'?'V · 3인칭':'V · 조종석',20,st.mode==='match'?30:30,12,dim);
+    txt(`튜토리얼 ${Math.min(s.step+1,TUT.length-1)} / ${TUT.length-1}`,x-w/2+16,92,11,amber,'left',600);wrapTxt((isMobile()&&cur.m)||cur.t,x,118,w-40,15,ink)}
+  if(!mob)txt(st.view==='ck'?'V · 3인칭':'V · 조종석',20,30,12,dim);
 }
 
 /* ================= hangar UI ================= */
@@ -892,20 +1119,26 @@ async function showHangarModel(){
   hModel.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(hModel,true);hModel.position.y=-b.min.y+.02;hScene.add(hModel);hLen=M.len;
 }
 function toHangar(){
+  $('touch').hidden=true;setTimeout(()=>{if(st.mode==='hangar'&&S.music!==false)sfx.music(true)},300);
   clearWorld();st.mode='hangar';st.paused=true;st.tut=null;$('pause').hidden=true;$('result').hidden=true;$('hangar').hidden=false;sfx.gun(false);sfx.tone(null);sfx.engine(-1,0,0);
   if(!S.owned[viewId])viewId=S.sel;renderHangar();renderPass();showHangarModel();
 }
 
 /* ================= loop ================= */
 function frame(now){
-  requestAnimationFrame(frame);const dt=Math.min((now-last)/1000,.05);last=now;
+  requestAnimationFrame(frame);$('portrait').hidden=!(isMobile()&&st.mode!=='hangar'&&innerHeight>innerWidth);const dt=Math.min((now-last)/1000,.05);last=now;
   if(st.mode==='hangar'){
     if(hDrag==null)hYaw+=dt*.12;const r=hLen*1.75+9;hCam.position.set(Math.sin(hYaw)*r,hLen*.42+3,Math.cos(hYaw)*r);hCam.lookAt(0,hLen*.12,0);
     renderer.render(hScene,hCam);drawHUD();return}
   if(player){if(!st.paused)update(dt);updateCamera(dt);player.grp.visible=player.alive||player.dead>0}
   renderer.render(scene,camera);drawHUD();
 }
-resize();toHangar();requestAnimationFrame(frame);
+resize();toHangar();if(!S.device){$('devOv').hidden=false;$('devMobile').classList.toggle('primary',matchMedia('(pointer:coarse)').matches);$('devPC').classList.toggle('primary',!matchMedia('(pointer:coarse)').matches)}else applyDevice();
+$('btnDev').onclick=()=>{$('devOv').hidden=false};
+const lobbyMusic=()=>{if(st.mode==='hangar'&&S.music!==false){sfx.init();sfx.resume();sfx.music(true)}};
+addEventListener('pointerdown',lobbyMusic);addEventListener('keydown',lobbyMusic);
+$('btnMus').textContent=S.music===false?'음악 켜기':'음악 끄기';
+$('btnMus').onclick=()=>{S.music=S.music===false;save();$('btnMus').textContent=S.music===false?'음악 켜기':'음악 끄기';if(S.music===false)sfx.music(false);else lobbyMusic()};requestAnimationFrame(frame);
 window.__game={hModel:()=>hModel,st,S,units:()=>units,player:()=>player,update,THREE,aimDir,startMatch,startTutorial,toHangar,save};
 </script>
 
