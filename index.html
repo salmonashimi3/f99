@@ -106,6 +106,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #portrait{position:fixed;inset:0;z-index:7;display:grid;place-items:center;background:rgba(6,8,10,.92);text-align:center;padding:16px;font-size:16px}
 #devOv .row button{flex:1;min-width:140px;padding:22px 10px;font-size:18px}
 .devbtn{font-size:12px}
+.egg{font-family:var(--f-ui);font-size:11px;color:var(--dim);opacity:.45;letter-spacing:.1em;margin-left:6px}
 .mpgrid{display:grid;gap:10px}.mpin{font-family:var(--f-ui);font-size:16px;background:rgba(0,0,0,.3);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:10px 12px;min-width:0}
 .teams{display:grid;grid-template-columns:1fr 1fr;gap:10px}.teams>div{border:1px solid var(--line);border-radius:6px;padding:10px;min-width:0}
 .teams ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px;font-size:13px}.teams li{display:flex;justify-content:space-between;gap:6px}.teams li span{color:var(--dim);font-size:11px}
@@ -156,6 +157,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <button id="btnMP">멀티플레이</button>
     <button class="primary" id="btnGo">출격 · 5대5 데스매치</button>
     <button id="btnKeys">조작법</button>
+    <span class="egg" title="비행 중에 눌러보세요">7667?</span>
   </div>
 </div>
 
@@ -611,7 +613,7 @@ class Aircraft{
     this.alive=true;this.dead=0;this.grp.visible=true;this.thr=this.st.ab>0?.9:1;this.rearm();if(this.isPlayer){st.gloc=0;st.gEff=1}releaseRunway(this);this.ground=null;this.setGear(false)}
   setGear(v){this.gear=v;for(const n of this.gearNodes)n.visible=v}
   maxThr(){return this.st.ab>0?1.1:1}
-  rates(){const s=this.speed,t=this.st.turn;let sf=clamp((s-50)/140,0,1);if(s>400)sf*=lerp(1,.65,clamp((s-400)/250,0,1));
+  rates(){if(this.isPlayer&&st.egg)return{p:1.1,y:.5,r:4.2};const s=this.speed,t=this.st.turn;let sf=clamp((s-50)/140,0,1);if(s>400)sf*=lerp(1,.65,clamp((s-400)/250,0,1));
     return{p:Math.max(Math.min(.95*sf*t,13*t*G/Math.max(s,1)),.05),y:Math.max(.3*sf,.05),r:3.4*Math.max(sf,.3)*(.7+.3*t)}}
   fly(dt,c,mult=1){
     const fwd=this.fwd(_v3),s=this.speed,lf=clamp((s-(this.gear?44:58))/65,0,1),R=this.rates();
@@ -620,13 +622,14 @@ class Aircraft{
     const ang=this.av.length();if(ang>1e-6){_q.setFromAxisAngle(_v.copy(this.av).divideScalar(ang),ang*dt);this.q.multiply(_q).normalize()}
     this.g=(-this.av.x*s)/G+this.up(_v).y;
     if(this.P.id==='f18'){this.negT=this.g<0?(this.negT||0)+dt:0;if(this.negT>10&&!this.engineOut){this.engineOut=true;if(this.isPlayer)feed('엔진 정지! 음의 G를 10초 넘게 유지 · 활공해서 착륙하세요','#ff4a3d')}}
-    if(this.pos.y>6096&&!this.altOut){this.altOut=true;if(this.isPlayer)feed('고도 20,000ft 초과 · 엔진 정지! 내려가면 재시동돼요','#ff4a3d')}
+    if(this.pos.y>6096&&!this.altOut&&!(this.isPlayer&&st.egg)){this.altOut=true;if(this.isPlayer)feed('고도 20,000ft 초과 · 엔진 정지! 내려가면 재시동돼요','#ff4a3d')}
     else if(this.altOut&&this.pos.y<5800){this.altOut=false;if(this.isPlayer)feed('엔진 재시동','#7dffa0')}
     const dry=this.fuel<=0||this.engineOut||this.altOut;const ab=!dry&&this.st.ab>0?clamp((this.thr-1)/.1,0,1):0;
     const thrust=dry?0:Math.min(this.thr,1)*this.st.mil+ab*this.st.ab;
     const drag=1.35e-4*s*s*(this.gear?1.9:1)+.0011*Math.max(this.g-1,0)**2*s*.35;
     if(!dry)this.fuel=Math.max(0,this.fuel-(.25+.75*Math.min(this.thr,1)+2.2*ab)/this.fuelTime*dt*(st.mode==='tutorial'?.3:1));
     this.speed=clamp(s+(thrust-drag-G*fwd.y)*dt,0,900);
+    if(this.isPlayer&&st.egg){this.speed=lerp(this.speed,300+Math.min(this.thr,1.1)*2400,1-Math.exp(-dt*1.5));this.fuel=1;this.engineOut=false;this.altOut=false}
     this.dir.lerp(fwd,1-Math.exp(-dt*(.4+3.2*lf))).normalize();
     this.sink+=G*(1-lf)*dt;this.sink*=Math.exp(-dt*lf*1.5);
     this.vel.copy(this.dir).multiplyScalar(this.speed);this.vel.y-=this.sink;
@@ -756,13 +759,13 @@ async function startTutorial(){if(NET.code)NET.leave();NET.on=false;
   st.tut={step:0,t:0,turned:0,lastYaw:st.aimYaw,views:0,drone:null,M:Ms.su27};
   enterFlight();
 }
-function resetPlayerState(){for(const b of BASES)b.occupant=null;Object.assign(st,{gEff:1,gloc:0,tanker:null,tankerCd:0,refuel:false,rwyMsgT:0,view:'tp',lockT:0,lockTarget:null,locked:false,feed:[],hitT:0,dmgT:0,shake:0,fireHeld:false,flareCd:0,mslCd:0,warn:false,rwr:0,slot:0});camera.near=.5;camera.fov=68;camera.updateProjectionMatrix()}
+function resetPlayerState(){st.egg=false;for(const b of BASES)b.occupant=null;Object.assign(st,{gEff:1,gloc:0,tanker:null,tankerCd:0,refuel:false,rwyMsgT:0,view:'tp',lockT:0,lockTarget:null,locked:false,feed:[],hitT:0,dmgT:0,shake:0,fireHeld:false,flareCd:0,mslCd:0,warn:false,rwr:0,slot:0});camera.near=.5;camera.fov=68;camera.updateProjectionMatrix()}
 function aimToNose(){const f=player.fwd(new V3());st.aimYaw=Math.atan2(f.x,f.z);st.aimPitch=Math.asin(clamp(f.y,-1,1))}
 function newAI(){return{mode:'attack',t:0,brk:1,fireCd:rnd(0,2),mslCd:rnd(3,9),lockT:0,target:null,retarget:0,skill:clamp(.6+planeIndex(S.sel)*.025,0,.9),burst:0,gunT:0}}
 function enterFlight(){sfx.music(false);$('hangar').hidden=true;st.paused=false;sfx.init();sfx.resume();if(!isMobile())lockPointer();$('touch').hidden=!isMobile();last=performance.now()}
 function lockPointer(){try{const r=glc.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 
-function damage(u,d,src){if(!u.alive)return;if(NET.on&&u.netRemote){NET.ev({k:'hit',to:u.nid,dmg:d,from:src&&src.nid});return}u.hp-=d;if(u===player){st.dmgT=.35;st.shake=Math.min(st.shake+.4,1.2)}if(u.hp<=0)kill(u,src)}
+function damage(u,d,src){if(!u.alive)return;if(u===player&&st.egg)return;if(NET.on&&u.netRemote){NET.ev({k:'hit',to:u.nid,dmg:d,from:src&&src.nid});return}u.hp-=d;if(u===player){st.dmgT=.35;st.shake=Math.min(st.shake+.4,1.2)}if(u.hp<=0)kill(u,src)}
 function kill(u,src){
   u.alive=false;u.dead=10;u.spin=rnd(-2.5,2.5);u.thr=0;u.deaths++;u.respawnT=0;explosion(u.pos,1.1,u.vel);releaseRunway(u);u.ground=null;
   if(u.support){feed(`${u.name} 격추됨`,'#ff4a3d');return}
@@ -795,6 +798,7 @@ addEventListener('keydown',e=>{if(e.target===chatIn)return;
   if(e.code==='KeyM'){const m=sfx.toggle();feed(m?'소리 끔':'소리 켬')}
   if(e.code==='KeyF')dropFlares(player);
   if(e.code==='Space')playerMissile();
+  {const d={Digit7:'7',Digit6:'6',Numpad7:'7',Numpad6:'6'}[e.code];if(d){const now=performance.now();if(now-(st.eggT||0)>2500)st.eggBuf='';st.eggT=now;st.eggBuf=((st.eggBuf||'')+d).slice(-4);if(st.eggBuf==='7667'){st.eggBuf='';toggleEgg()}}}
   if(e.code==='KeyG')toggleGear();
   if(e.code==='F1')callTanker();
 });
@@ -852,6 +856,9 @@ function dropFlares(u,remote){if(!u||!u.alive||(!remote&&u.flr<=0))return;if(NET
   for(const m of missiles)if(m.target===u&&m.s.ir&&Math.random()<.65)m.target={decoy:true,ref:flares[flares.length-1]};
   for(const m of missiles)if(m.target===u&&!m.s.ir&&Math.random()<.25)m.target=null;
   if(u===player)sfx.shot(300,.15,.15,'sawtooth')}
+function toggleEgg(){const P=player;if(!P||!P.alive)return;st.egg=!st.egg;
+  if(st.egg){P.grp.scale.set(1.45,.32,1.15);P.grp.rotation.z=0;feed('이스터에그 7667 · 찌그러진 무적 모드! 마하 999999999999999999999','#ff4fd8');sfx.shot(200,.6,.25,'sawtooth');sfx.shot(1600,.4,.15,'square');st.shake=1.2}
+  else{P.grp.scale.set(1,1,1);P.speed=Math.min(P.speed,400);feed('이스터에그 해제 · 원래대로','#8c9aa6')}}
 function toggleGear(){if(!player||!player.alive||player.ground)return;player.setGear(!player.gear);sfx.shot(160,.35,.12,'sawtooth');feed(player.gear?'착륙 기어 내림 · 아군 기지 활주로에 착륙하면 정비':'착륙 기어 올림','#8c9aa6')}
 async function callTanker(){
   if(!player||!player.alive||st.paused)return;if(NET.on){feed('멀티플레이에서는 급유기를 부를 수 없어요','#8c9aa6');return}if(st.tanker){feed('급유기가 이미 오고 있습니다','#8c9aa6');return}
@@ -881,7 +888,8 @@ function update(dt){
   const P=player;st.time+=dt;
   st.tankerCd-=dt;st.rwyMsgT=Math.max(0,st.rwyMsgT-dt);
   // G-force: 5G grey-out, 7G blackout, 10G G-LOC (no control until G is back to normal)
-  st.gEff=lerp(st.gEff,P.alive&&!P.ground?Math.max(P.g,1):1,1-Math.exp(-dt*(P.g>st.gEff?.9:1.8)));
+  if(st.egg&&P.alive){P.hp=P.st.hp;if(P.st.gun)P.ammo=P.st.gun.ammo;for(const m of P.msl)m.n=Math.max(m.n,9);P.flr=P.st.flr;st.mslCd=Math.min(st.mslCd,.15)}
+  st.gEff=lerp(st.gEff,P.alive&&!P.ground&&!st.egg?Math.max(P.g,1):1,1-Math.exp(-dt*(P.g>st.gEff?.9:1.8)));
   if(P.alive&&st.gEff>=12&&!(st.gloc>0)){st.gloc=2.5;st.glocT=0;st.glocCtl={pitch:ctl.pitch*.2,roll:ctl.roll*.15};feed('G-LOC! 의식을 잃었습니다 · G가 내려가면 회복','#ff4a3d')}
   if(st.gloc>0){st.gloc-=dt;st.glocT=(st.glocT||0)+dt;if(st.gEff>4.5)st.gloc=Math.max(st.gloc,.2);if(st.gloc<=0){st.gloc=0;if(P.alive)aimToNose();feed('의식 회복 · 다시 조종할 수 있어요','#7dffa0')}}
   if(P.alive){
@@ -907,7 +915,8 @@ function update(dt){
     if(spec&&slot.n>0){let bestA=spec.cone;const f=P.fwd(new V3());for(const e of enemiesOf(P)){const d=_v.subVectors(e.pos,P.pos),dist=d.length();if(dist>spec.range*P.st.rangeMul)continue;const a=f.angleTo(d);if(a<bestA){bestA=a;best=e}}}
     if(best&&best===st.lockTarget)st.lockT+=dt;else{st.lockTarget=best;st.lockT=0}
     st.lockNeed=spec?spec.lock*P.st.lockMul*(1+(best?best.st.stealth:0)):1;st.locked=!!best&&st.lockT>st.lockNeed;
-    const gh=ground(P.pos.x,P.pos.z);if(!P.ground&&P.pos.y<gh+(P.gear?P.M.gearH:3)){if(!groundContact(P)){P.pos.y=gh+3;P.hp=0;kill(P,null)}}
+    const gh=ground(P.pos.x,P.pos.z);if(st.egg&&P.pos.y<gh+8){P.pos.y=gh+8;if(P.dir.y<0){P.dir.y=Math.abs(P.dir.y)*.5;P.dir.normalize()}}
+    if(!P.ground&&P.pos.y<gh+(P.gear?P.M.gearH:3)){if(!groundContact(P)){P.pos.y=gh+3;P.hp=0;kill(P,null)}}
     // air refuelling
     st.refuel=false;const TK=st.tanker&&st.tanker.T;
     if(TK&&TK.alive){const boom=boomPoint(TK);if(boom.distanceTo(P.pos)<70&&Math.abs(P.speed-TK.speed)<50&&P.fuel<1){st.refuel=true;P.fuel=Math.min(1,P.fuel+.12*dt);if(P.fuel>=1)feed('공중급유 완료','#7dffa0')}}
@@ -1136,13 +1145,13 @@ function drawHUD(){
     else if(P.fuel<.2&&blink2)txt(mob?'연료 부족 · 기어 내리고 기지 착륙 또는 급유기':'연료 부족 · G 착륙 정비 또는 F1 급유기',cx,Hh*.16,17,amber,'center',700);
   }
   // flight data
-  if(mob){const fc=P.fuel<.2?red:P.fuel<.35?amber:ink;const line=`${Math.round(P.speed*3.6)} km/h · ${Math.round(P.pos.y)} m · 스로틀 ${P.thr>1.001?'AB':Math.round(P.thr*100)+'%'} · 기어 ${P.gear?'내림':'올림'}`;
+  if(mob){const fc=P.fuel<.2?red:P.fuel<.35?amber:ink;const line=`${st.egg?'마하 999999999999999999999':Math.round(P.speed*3.6)+' km/h'} · ${Math.round(P.pos.y)} m · 스로틀 ${P.thr>1.001?'AB':Math.round(P.thr*100)+'%'} · 기어 ${P.gear?'내림':'올림'}`;
     hx.fillStyle='rgba(10,14,18,.6)';hx.fillRect(cx-170,Hh-62,340,52);txt(line,cx,Hh-42,13,ink,'center');txt(`연료 ${Math.round(P.fuel*100)}%  ·  체력 ${Math.max(0,Math.round(P.hp))}/${P.st.hp}`,cx,Hh-22,13,fc,'center');
     const hpk=clamp(P.hp/P.st.hp,0,1);hx.fillStyle=hpk>.5?green:hpk>.25?amber:red;hx.fillRect(cx-170,Hh-12,340*hpk,3)}
   else{
   const pX=mob?16:20,pY=mob?120:Hh-196;hx.fillStyle='rgba(10,14,18,.55)';hx.fillRect(pX-10,pY-26,190,mob?150:186);
-  const rows=[['SPD',`${Math.round(P.speed*3.6)}`,'km/h'],['ALT',`${Math.round(P.pos.y)}`,'m'],['THR',P.thr>1.001?'AB':`${Math.round(P.thr*100)}`,P.thr>1.001?'':'%'],['FUEL',`${Math.round(P.fuel*100)}`,'%'],['GEAR',P.gear?'DOWN':'UP',''],P.P.sweep?['WING',`${Math.round(20+P.sweep*57.3)}`,'°']:['G',P.g.toFixed(1),'']];
-  const rh=mob?20:26;rows.forEach((r,i)=>{const c=r[0]==='FUEL'?(P.fuel<.2?red:P.fuel<.35?amber:ink):r[1]==='AB'||r[1]==='DOWN'?amber:ink;txt(r[0],pX,pY+i*rh,12,dim);txt(r[1],pX+120,pY+i*rh,mob?16:20,c,'right');txt(r[2],pX+126,pY+i*rh,11,dim)});
+  const rows=[st.egg?['MACH','999999999999999999999','']:['SPD',`${Math.round(P.speed*3.6)}`,'km/h'],['ALT',`${Math.round(P.pos.y)}`,'m'],['THR',P.thr>1.001?'AB':`${Math.round(P.thr*100)}`,P.thr>1.001?'':'%'],['FUEL',`${Math.round(P.fuel*100)}`,'%'],['GEAR',P.gear?'DOWN':'UP',''],P.P.sweep?['WING',`${Math.round(20+P.sweep*57.3)}`,'°']:['G',P.g.toFixed(1),'']];
+  const rh=mob?20:26;rows.forEach((r,i)=>{const c=r[0]==='FUEL'?(P.fuel<.2?red:P.fuel<.35?amber:ink):r[1]==='AB'||r[1]==='DOWN'?amber:ink;txt(r[0],pX,pY+i*rh,12,dim);if(r[0]==='MACH'){txt(r[1],pX+40,pY+i*rh,10,'#ff4fd8','left',700);return}txt(r[1],pX+120,pY+i*rh,mob?16:20,c,'right');txt(r[2],pX+126,pY+i*rh,11,dim)});
   hx.fillStyle='rgba(255,255,255,.12)';hx.fillRect(pX+164,pY-14,6,rh*5.5);const th=clamp(P.thr/1.1,0,1);hx.fillStyle=P.thr>1?amber:ink;hx.fillRect(pX+164,pY-14+rh*5.5*(1-th),6,rh*5.5*th);
   const hb=pY+rh*6-6;hx.fillStyle='rgba(255,255,255,.12)';hx.fillRect(pX-10,hb,190,4);const hpk=clamp(P.hp/P.st.hp,0,1);hx.fillStyle=hpk>.5?green:hpk>.25?amber:red;hx.fillRect(pX-10,hb,190*hpk,4);}
   // weapons
@@ -1185,6 +1194,7 @@ function drawHUD(){
   if(st.tut){const s=st.tut,cur=TUT[s.step];const w=Math.min(560,W-40),x=cx;hx.fillStyle='rgba(10,14,18,.78)';hx.fillRect(x-w/2,70,w,92);hx.fillStyle=amber;hx.fillRect(x-w/2,70,3,92);
     txt(`튜토리얼 ${Math.min(s.step+1,TUT.length-1)} / ${TUT.length-1}`,x-w/2+16,92,11,amber,'left',600);wrapTxt((isMobile()&&cur.m)||cur.t,x,118,w-40,15,ink)}
   if(!mob)txt(st.view==='ck'?'V · 3인칭':'V · 조종석',20,30,12,dim);
+  if(st.egg&&P.alive){const t=performance.now()/300;txt('7667 · 무적 · 무기 무한 · 마하 999999999999999999999',cx,Hh*.12,16,`hsl(${(t*60)%360},90%,65%)`,'center',700)}
 }
 
 /* ================= hangar UI ================= */
