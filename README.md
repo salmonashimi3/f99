@@ -45,6 +45,7 @@ GitHub Pages로 배포하면 `https://<아이디>.github.io/<저장소 이름>/`
 | 스로틀 ↑ / ↓ | Shift · Enter · 휠 |
 | 착륙 기어 | G |
 | 공중급유기 호출 | F1 |
+| 채팅 | T (Enter 보내기 · Esc 닫기) |
 | 시점 전환 | V |
 | 자유 시점 | C 누르기 |
 | 플레어 | F |

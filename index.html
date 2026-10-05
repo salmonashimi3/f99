@@ -99,7 +99,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #tUp{bottom:calc(92px + env(safe-area-inset-bottom,0px))}#tDn{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 .tsm{position:absolute;top:calc(64px + env(safe-area-inset-top,0px));height:40px;min-width:56px;border-radius:8px;font-size:12px;padding:0 10px}
 #tPause{left:calc(12px + env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));width:44px;height:44px;border-radius:10px;font-size:16px}
-#tView{right:calc(12px + env(safe-area-inset-right,0px))}#tGear{right:calc(78px + env(safe-area-inset-right,0px))}#tTank{right:calc(144px + env(safe-area-inset-right,0px))}
+#tView{right:calc(12px + env(safe-area-inset-right,0px))}#tGear{right:calc(78px + env(safe-area-inset-right,0px))}#tTank{right:calc(144px + env(safe-area-inset-right,0px))}#tChat{right:calc(210px + env(safe-area-inset-right,0px))}
+#chatBox{position:fixed;left:16px;bottom:calc(230px + env(safe-area-inset-bottom,0px));z-index:5;display:flex;gap:6px;width:min(420px,calc(100vw - 32px))}
+#chatIn{flex:1;min-width:0;font:15px var(--f-kr);background:rgba(10,14,18,.85);color:var(--ink);border:1px solid var(--amber);border-radius:4px;padding:9px 11px}
+@media (pointer:coarse){#chatBox{bottom:auto;top:calc(110px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%)}}
 #portrait{position:fixed;inset:0;z-index:7;display:grid;place-items:center;background:rgba(6,8,10,.92);text-align:center;padding:16px;font-size:16px}
 #devOv .row button{flex:1;min-width:140px;padding:22px 10px;font-size:18px}
 .devbtn{font-size:12px}
@@ -207,18 +210,25 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <button class="tb tsm" id="tView">시점</button>
   <button class="tb tsm" id="tGear">기어</button>
   <button class="tb tsm" id="tTank">급유기</button>
+  <button class="tb tsm" id="tChat">채팅</button>
 </div>
+<form id="chatBox" hidden autocomplete="off"><input id="chatIn" maxlength="60" placeholder="메시지 입력 · Enter 보내기 · Esc 닫기" aria-label="채팅 메시지"><button type="submit">보내기</button></form>
 <div id="portrait" hidden>휴대폰을 가로로 돌려주세요</div>
 <div class="ov" id="keysOv" hidden><div class="sheet">
   <h2>조작법</h2>
   <div class="keys">
-    <div><span>조준 / 선회</span><b>마우스</b></div><div><span>기관포</span><b>좌클릭</b></div>
-    <div><span>미사일 (락온 필요)</span><b>우클릭 · Space</b></div><div><span>미사일 종류</span><b>1 · 2</b></div>
-    <div><span>스로틀 ↑ / ↓</span><b>Shift · Enter · 휠</b></div><div><span>착륙 기어</span><b>G</b></div><div><span>공중급유기 호출</span><b>F1</b></div><div><span>시점 전환</span><b>V</b></div>
-    <div><span>자유 시점</span><b>C 누르기</b></div><div><span>플레어</span><b>F</b></div>
-    <div><span>수동 조종</span><b>W S A D Q E · 방향키</b></div><div><span>음소거 · 일시정지(설정)</span><b>M · Esc</b></div>
+    <div><span>조준 · 선회</span><b>마우스</b></div><div><span>기관포</span><b>좌클릭</b></div>
+    <div><span>미사일 발사 (락온 필요)</span><b>우클릭 · Space</b></div><div><span>미사일 종류 1 · 2</span><b>1 · 2</b></div>
+    <div><span>가속 (스로틀 ↑)</span><b>Shift</b></div><div><span>감속 (스로틀 ↓)</span><b>Enter</b></div>
+    <div><span>스로틀 조절</span><b>마우스 휠</b></div><div><span>기수 내림 · 올림</span><b>W · S</b></div>
+    <div><span>왼쪽 · 오른쪽 롤</span><b>A · D</b></div><div><span>왼쪽 · 오른쪽 요</span><b>Q · E</b></div>
+    <div><span>피치 · 롤 (보조)</span><b>방향키</b></div><div><span>플레어</span><b>F</b></div>
+    <div><span>착륙 기어 올림 · 내림</span><b>G</b></div><div><span>공중급유기 호출</span><b>F1</b></div>
+    <div><span>시점 (3인칭 · 조종석)</span><b>V</b></div><div><span>자유 시점 (누르는 동안)</span><b>C</b></div>
+    <div><span>채팅 (보내기 Enter · 닫기 Esc)</span><b>T</b></div><div><span>소리 끄기 · 켜기</span><b>M</b></div>
+    <div><span>일시정지 · 설정</span><b>Esc</b></div><div><span>이륙 (정비 끝난 뒤)</span><b>Shift</b></div>
   </div>
-  <p class="hint" style="margin:0">모바일: 왼쪽 조이스틱 조준 · 오른쪽 기관포/미사일/플레어/무장전환 · ▲▼ 스로틀 · 위쪽 시점/기어/급유기 · Ⅱ 일시정지</p>
+  <p class="hint" style="margin:0">모바일: 왼쪽 조이스틱 조준 · 오른쪽 기관포/미사일/플레어/무장전환 · ▲▼ 스로틀 · 위쪽 시점/기어/급유기/채팅 · Ⅱ 일시정지</p>
   <div class="row"><label class="hint" for="sens">마우스 감도</label><input id="sens" type="range" min="1" max="10" value="5" style="flex:1;accent-color:var(--amber)"><b class="num" id="sensv">5</b></div>
   <div class="row"><button id="keysClose">닫기</button></div>
 </div></div>
@@ -765,7 +775,16 @@ function kill(u,src){
 }
 
 /* ================= input ================= */
-addEventListener('keydown',e=>{keys[e.code]=true;
+const chatIn=$('chatIn');
+function openChat(){if(st.mode==='hangar'||!player)return;for(const k in keys)keys[k]=false;st.fireHeld=false;$('chatBox').hidden=false;chatIn.value='';chatIn.focus()}
+function closeChat(){$('chatBox').hidden=true;chatIn.blur()}
+function addChat(name,text,team){st.chat=st.chat||[];st.chat.push({name,text,team,life:12});if(st.chat.length>7)st.chat.shift()}
+$('chatBox').addEventListener('submit',e=>{e.preventDefault();const t=chatIn.value.trim().slice(0,60);if(t){const nm=(player&&player.name)||S.name||'나',tm=player?player.team:0;addChat(nm,t,tm);if(NET.on)NET.ev({k:'chat',name:nm,team:tm,text:t});sfx.shot(1200,.05,.06,'triangle')}closeChat()});
+chatIn.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();closeChat()}});
+chatIn.addEventListener('keyup',e=>e.stopPropagation());
+addEventListener('keydown',e=>{if(e.target===chatIn)return;
+  if(e.code==='KeyT'&&st.mode!=='hangar'&&!st.paused&&!st.over){e.preventDefault();openChat();return}
+  keys[e.code]=true;
   if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','F1','Enter'].includes(e.code)&&st.mode!=='hangar'&&e.target.tagName!=='INPUT')e.preventDefault();
   if(e.code==='Escape'&&st.mode!=='hangar'&&!st.over){if(!$('keysOv').hidden){$('keysOv').hidden=true;return}if(st.paused){$('btnResume').click()}else if(!document.pointerLockElement)pauseGame(true);return}
   if(st.mode==='hangar'||st.paused)return;
@@ -777,7 +796,7 @@ addEventListener('keydown',e=>{keys[e.code]=true;
   if(e.code==='KeyG')toggleGear();
   if(e.code==='F1')callTanker();
 });
-addEventListener('keyup',e=>{keys[e.code]=false});
+addEventListener('keyup',e=>{if(e.target===chatIn)return;keys[e.code]=false});
 glc.addEventListener('contextmenu',e=>e.preventDefault());
 glc.addEventListener('pointerdown',e=>{if(st.mode==='hangar'){hDrag=e.clientX;try{glc.setPointerCapture(e.pointerId)}catch(_){}}});
 glc.addEventListener('pointermove',e=>{if(st.mode==='hangar'&&hDrag!=null){hYaw+=(e.clientX-hDrag)*.008;hDrag=e.clientX}});
@@ -804,6 +823,7 @@ document.addEventListener('pointerlockchange',()=>{if(!isMobile()&&!document.poi
   hold('tFire','fire');hold('tUp','thrUp');hold('tDn','thrDn');
   const tap=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();if(!st.paused)fn()});
   tap('tMsl',playerMissile);tap('tFlr',()=>dropFlares(player));tap('tGear',toggleGear);tap('tTank',callTanker);
+  $('tChat').addEventListener('pointerdown',e=>{e.preventDefault();openChat()});
   tap('tSw',()=>{if(player&&player.msl.length>1)st.slot=1-st.slot});
   tap('tView',()=>{st.view=st.view==='tp'?'ck':'tp';camera.near=st.view==='ck'?.03:.5;camera.fov=st.view==='ck'?78:68;camera.updateProjectionMatrix();if(st.tut)st.tut.views++});
   $('tPause').addEventListener('pointerdown',e=>{e.preventDefault();pauseGame(true)});
@@ -859,9 +879,9 @@ function update(dt){
   const P=player;st.time+=dt;
   st.tankerCd-=dt;st.rwyMsgT=Math.max(0,st.rwyMsgT-dt);
   // G-force: 5G grey-out, 7G blackout, 10G G-LOC (no control until G is back to normal)
-  st.gEff=lerp(st.gEff,P.alive&&!P.ground?Math.max(P.g,1):1,1-Math.exp(-dt*(P.g>st.gEff?2.2:1.2)));
-  if(P.alive&&st.gEff>=10&&!(st.gloc>0)){st.gloc=2.5;feed('G-LOC! 의식을 잃었습니다 · G가 내려가면 회복','#ff4a3d')}
-  if(st.gloc>0){st.gloc-=dt;if(st.gEff>2)st.gloc=Math.max(st.gloc,.3);if(st.gloc<=0)feed('의식 회복','#7dffa0')}
+  st.gEff=lerp(st.gEff,P.alive&&!P.ground?Math.max(P.g,1):1,1-Math.exp(-dt*(P.g>st.gEff?.9:1.8)));
+  if(P.alive&&st.gEff>=12&&!(st.gloc>0)){st.gloc=1.8;feed('G-LOC! 의식을 잃었습니다 · G가 내려가면 회복','#ff4a3d')}
+  if(st.gloc>0){st.gloc-=dt;if(st.gEff>4)st.gloc=Math.max(st.gloc,.2);if(st.gloc<=0)feed('의식 회복','#7dffa0')}
   if(P.alive){
     if(keys.ShiftLeft||keys.ShiftRight||touch.thrUp)P.thr=clamp(P.thr+dt*.5,0,P.maxThr());if(keys.Enter||keys.NumpadEnter||touch.thrDn)P.thr=clamp(P.thr-dt*.5,0,P.maxThr());
     if(P.ground){groundUpdate(P,dt)}else{
@@ -931,7 +951,7 @@ function update(dt){
   const n=bullets.length;for(let i=0;i<n;i++){const b=bullets[i],j=i*6;trPos[j]=b.p.x;trPos[j+1]=b.p.y;trPos[j+2]=b.p.z;const tl=_v.copy(b.v).sub(b.owner.vel).multiplyScalar(.03);
     trPos[j+3]=b.p.x-tl.x;trPos[j+4]=b.p.y-tl.y;trPos[j+5]=b.p.z-tl.z;const bl=b.owner.team===0;trCol[j]=bl?1:1;trCol[j+1]=bl?.78:.4;trCol[j+2]=bl?.4:.3;trCol[j+3]=.4;trCol[j+4]=.2;trCol[j+5]=.05}
   trGeo.setDrawRange(0,n*2);trGeo.attributes.position.needsUpdate=trGeo.attributes.color.needsUpdate=true;
-  st.hitT-=dt;st.dmgT-=dt;st.shake*=Math.exp(-dt*5);for(const f of st.feed)f.life-=dt;st.feed=st.feed.filter(f=>f.life>0);
+  st.hitT-=dt;st.dmgT-=dt;st.shake*=Math.exp(-dt*5);for(const f of st.feed)f.life-=dt;st.feed=st.feed.filter(f=>f.life>0);if(st.chat){for(const c of st.chat)c.life-=dt;st.chat=st.chat.filter(c=>c.life>0)}
   if(st.mode==='match')matchRules();else if(st.mode==='tutorial')tutorial(dt);
 }
 
@@ -1149,10 +1169,13 @@ function drawHUD(){
   if(st.dmgT>0){const g=hx.createRadialGradient(cx,cy,Math.min(W,Hh)*.3,cx,cy,Math.max(W,Hh)*.7);g.addColorStop(0,'rgba(255,40,30,0)');g.addColorStop(1,`rgba(255,40,30,${st.dmgT})`);hx.fillStyle=g;hx.fillRect(0,0,W,Hh)}
   if(!P.alive&&!st.over){hx.fillStyle='rgba(0,0,0,.35)';hx.fillRect(0,cy-50,W,100);txt('격추됨',cx,cy,34,red,'center',700);
     if(P.respawnT>0)txt(`${Math.max(0,Math.ceil((st.mode==='match'?5:3)-P.respawnT))}초 후 재출격`,cx,cy+30,15,ink,'center')}
-  if(P.alive&&(st.gEff>6||st.gloc>0)){const k=st.gloc>0?.96:clamp((st.gEff-6)/3,0,.85);const vg=hx.createRadialGradient(cx,cy,Math.min(W,Hh)*(.45-k*.4),cx,cy,Math.max(W,Hh)*.65);
+  if(P.alive&&(st.gEff>8||st.gloc>0)){const k=st.gloc>0?.92:clamp((st.gEff-8)/4,0,.7);const vg=hx.createRadialGradient(cx,cy,Math.min(W,Hh)*(.45-k*.4),cx,cy,Math.max(W,Hh)*.65);
     vg.addColorStop(0,`rgba(0,0,0,${k*.6})`);vg.addColorStop(1,`rgba(0,0,0,${Math.min(1,k*1.2)})`);hx.fillStyle=vg;hx.fillRect(0,0,W,Hh);
-    if(st.gloc>0)txt('G-LOC · 의식 잃음',cx,cy,26,'#ff4a3d','center',700);else if(st.gEff>7)txt(`${st.gEff.toFixed(1)} G · 블랙아웃`,cx,cy+60,16,'#ffb547','center',700)}
-  else if(P.alive&&st.gEff>4.5)txt(`${st.gEff.toFixed(1)} G`,cx,cy+60,14,st.gEff>5?'#ffb547':'#8c9aa6','center',700);
+    if(st.gloc>0)txt('G-LOC · 의식 잃음',cx,cy,26,'#ff4a3d','center',700);else if(st.gEff>9)txt(`${st.gEff.toFixed(1)} G · 블랙아웃`,cx,cy+60,16,'#ffb547','center',700)}
+  else if(P.alive&&st.gEff>6)txt(`${st.gEff.toFixed(1)} G`,cx,cy+60,14,st.gEff>7?'#ffb547':'#8c9aa6','center',700);
+  if(st.chat&&st.chat.length){const by=mob?Hh*.62:Hh-246;st.chat.slice().reverse().forEach((c,i)=>{hx.globalAlpha=clamp(c.life/2,0,1);const y=by-i*20;
+      txt(`${c.name}:`,16,y,13,c.team===0?blue:red,'left',700);hx.font=`700 13px ${UI}`;const w=hx.measureText(`${c.name}: `).width;txt(c.text,16+w,y,13,ink,'left',500);hx.globalAlpha=1})}
+  if(!mob&&!$('chatBox').hidden)txt('채팅 중 · Enter 보내기 · Esc 닫기',16,Hh-232,11,dim);
   // tutorial card
   if(st.tut){const s=st.tut,cur=TUT[s.step];const w=Math.min(560,W-40),x=cx;hx.fillStyle='rgba(10,14,18,.78)';hx.fillRect(x-w/2,70,w,92);hx.fillStyle=amber;hx.fillRect(x-w/2,70,3,92);
     txt(`튜토리얼 ${Math.min(s.step+1,TUT.length-1)} / ${TUT.length-1}`,x-w/2+16,92,11,amber,'left',600);wrapTxt((isMobile()&&cur.m)||cur.t,x,118,w-40,15,ink)}
@@ -1251,7 +1274,7 @@ async function showHangarModel(){
   hModel.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(hModel,true);hModel.position.y=-b.min.y+.02;hScene.add(hModel);hLen=M.len;
 }
 function toHangar(){
-  $('touch').hidden=true;setTimeout(()=>{if(st.mode==='hangar'&&S.music!==false)sfx.music(true)},300);
+  $('touch').hidden=true;closeChat();st.chat=[];setTimeout(()=>{if(st.mode==='hangar'&&S.music!==false)sfx.music(true)},300);
   clearWorld();st.mode='hangar';st.paused=true;st.tut=null;$('pause').hidden=true;$('result').hidden=true;$('hangar').hidden=false;sfx.gun(false);sfx.tone(null);sfx.engine(-1,0,0);
   if(!S.owned[viewId])viewId=S.sel;renderHangar();renderPass();showHangarModel();
 }
@@ -1349,7 +1372,8 @@ const NET={on:false,host:false,db:null,uid:null,code:null,room:null,lobby:null,s
       if(this.host){st.score[1-v.team]++;this.pushScore()}if(b===player)player.kills++;
       const nm=x=>`${x.name} (${x.P.name.split(' ')[0]})`;if(b)feed(`${nm(b)} ▸ ${nm(v)}`,b.team===0?'#4aa8ff':'#ff4a3d');else feed(`${nm(v)} 추락`,'#8c9aa6');if(b===player)sfx.shot(500,.25,.2,'triangle')}
     else if(e.k==='msl'){const f=U(e.from);if(f&&MSL[e.mt])launchMissile(f,e.mt,e.to?U(e.to):null)}
-    else if(e.k==='flr'){const f=U(e.from);if(f)dropFlares(f,true)}},
+    else if(e.k==='flr'){const f=U(e.from);if(f)dropFlares(f,true)}
+    else if(e.k==='chat'){addChat(String(e.name||'?').slice(0,10),String(e.text||'').slice(0,60),e.team);sfx.shot(1000,.05,.05,'triangle')}},
 };
 async function startMP(r){
   const pl=r.players||{},humans=Object.entries(pl).map(([uid,p])=>({uid,...p}));const st0=r.start||{};
@@ -1384,7 +1408,7 @@ $('mpStart').onclick=async()=>{const r=NET.lobby;if(!r||!NET.host)return;const p
 
 /* ================= loop ================= */
 let lastFilter='';
-function gFilter(){const ge=st.mode==='hangar'?1:st.gEff;const gray=clamp((ge-5)/1.2,0,1),dark=st.gloc>0?.97:clamp((ge-7)/2.2,0,.9);
+function gFilter(){const ge=st.mode==='hangar'?1:st.gEff;const gray=clamp((ge-7)/2,0,.85),dark=st.gloc>0?.95:clamp((ge-9)/3.5,0,.75);
   const f=gray>.01||dark>.01?`grayscale(${gray.toFixed(2)}) brightness(${(1-dark).toFixed(2)})`:'';if(f!==lastFilter){glc.style.filter=f;lastFilter=f}}
 function frame(now){
   requestAnimationFrame(frame);$('portrait').hidden=!(isMobile()&&st.mode!=='hangar'&&innerHeight>innerWidth);const dt=Math.min((now-last)/1000,.05);last=now;
