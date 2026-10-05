@@ -103,6 +103,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #portrait{position:fixed;inset:0;z-index:7;display:grid;place-items:center;background:rgba(6,8,10,.92);text-align:center;padding:16px;font-size:16px}
 #devOv .row button{flex:1;min-width:140px;padding:22px 10px;font-size:18px}
 .devbtn{font-size:12px}
+.mpgrid{display:grid;gap:10px}.mpin{font-family:var(--f-ui);font-size:16px;background:rgba(0,0,0,.3);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:10px 12px;min-width:0}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:10px}.teams>div{border:1px solid var(--line);border-radius:6px;padding:10px;min-width:0}
+.teams ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px;font-size:13px}.teams li{display:flex;justify-content:space-between;gap:6px}.teams li span{color:var(--dim);font-size:11px}
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.seg button[aria-checked="true"]{background:var(--amber);color:#1a1205;border-color:var(--amber)}
 #keysOv{z-index:8}
 .shop{max-height:calc(100vh - 32px);overflow:auto}
@@ -147,6 +150,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   </div>
   <div class="foot">
     <button id="btnTut">튜토리얼</button>
+    <button id="btnMP">멀티플레이</button>
     <button class="primary" id="btnGo">출격 · 5대5 데스매치</button>
     <button id="btnKeys">조작법</button>
   </div>
@@ -161,6 +165,22 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <div class="row"><input id="boxCode" placeholder="BOX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-family:var(--f-ui);font-size:16px;letter-spacing:.08em;text-transform:uppercase;background:rgba(0,0,0,.3);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:10px 12px"><button class="primary" id="boxApply" style="padding:10px 18px;font-size:14px">코드 적용</button></div>
   <div class="hint" id="boxMsg" role="status"></div>
   <div class="row"><button id="shopClose">닫기</button></div>
+</div></div>
+<div class="ov" id="mpOv" hidden><div class="sheet">
+  <div class="hint">MULTIPLAYER · 5대5 팀전</div><h2>멀티플레이</h2>
+  <div id="mpMenu" class="mpgrid">
+    <div class="row"><label class="hint" for="mpName">내 이름</label><input id="mpName" maxlength="10" class="mpin" style="flex:1"></div>
+    <button class="primary" id="mpCreate">방 만들기</button>
+    <div class="row"><input id="mpCode" class="mpin" placeholder="방 코드 5자리" maxlength="5" style="flex:1;text-transform:uppercase;letter-spacing:.2em"><button id="mpJoin">참가</button></div>
+  </div>
+  <div id="mpRoom" hidden class="mpgrid">
+    <div class="row" style="justify-content:space-between"><span class="hint">방 코드 · 친구에게 알려주세요</span><b class="num" id="mpRoomCode" style="font-size:30px;letter-spacing:.18em;color:var(--amber)"></b></div>
+    <div class="teams"><div><b style="color:var(--blue)">블루</b><ul id="mpT0"></ul></div><div><b style="color:var(--red)">레드</b><ul id="mpT1"></ul></div></div>
+    <p class="hint" style="margin:0">빈자리는 AI 전투기가 채워서 항상 5대5로 싸워요. 기체는 격납고에서 고른 기체로 나가요.</p>
+    <div class="row"><button id="mpSwap">팀 바꾸기</button><button class="primary" id="mpStart">시작</button><button id="mpLeave">나가기</button></div>
+  </div>
+  <div class="hint" id="mpMsg" role="status"></div>
+  <div class="row"><button id="mpClose">닫기</button></div>
 </div></div>
 <div class="ov" id="passOv" hidden><div class="sheet">
   <div class="hint">DEVELOPER PASS</div><h2>개발자 패스</h2>
@@ -573,7 +593,7 @@ class Aircraft{
     this.mslOffsets=[new V3(M.span*.22,-.8,0),new V3(-M.span*.22,-.8,0)];
     this.rearm();
   }
-  rearm(){this.fuel=1;this.hp=this.st.hp;this.ammo=this.st.gun?this.st.gun.ammo:0;this.msl=this.st.msl.map(m=>({type:m[0],n:m[1]}));this.flr=this.st.flr;this.mslSide=0}
+  rearm(){this.engineOut=false;this.negT=0;this.fuel=1;this.hp=this.st.hp;this.ammo=this.st.gun?this.st.gun.ammo:0;this.msl=this.st.msl.map(m=>({type:m[0],n:m[1]}));this.flr=this.st.flr;this.mslSide=0}
   fwd(o=new V3()){return o.set(0,0,1).applyQuaternion(this.q)}
   up(o=new V3()){return o.set(0,1,0).applyQuaternion(this.q)}
   right(o=new V3()){return o.set(-1,0,0).applyQuaternion(this.q)}
@@ -588,8 +608,9 @@ class Aircraft{
     const tgt=_v2.set(-c.pitch*R.p*mult*(c.pitch<0?.6:1),-c.yaw*R.y,c.roll*R.r*mult);
     this.av.lerp(tgt,1-Math.exp(-dt*(this.isPlayer?9:5)));
     const ang=this.av.length();if(ang>1e-6){_q.setFromAxisAngle(_v.copy(this.av).divideScalar(ang),ang*dt);this.q.multiply(_q).normalize()}
-    this.g=1+Math.abs(this.av.x)*s/G*(this.av.x<0?1:-1);
-    const dry=this.fuel<=0;const ab=!dry&&this.st.ab>0?clamp((this.thr-1)/.1,0,1):0;
+    this.g=(-this.av.x*s)/G+this.up(_v).y;
+    if(this.P.id==='f18'){this.negT=this.g<0?(this.negT||0)+dt:0;if(this.negT>10&&!this.engineOut){this.engineOut=true;if(this.isPlayer)feed('엔진 정지! 음의 G를 10초 넘게 유지 · 활공해서 착륙하세요','#ff4a3d')}}
+    const dry=this.fuel<=0||this.engineOut;const ab=!dry&&this.st.ab>0?clamp((this.thr-1)/.1,0,1):0;
     const thrust=dry?0:Math.min(this.thr,1)*this.st.mil+ab*this.st.ab;
     const drag=1.35e-4*s*s*(this.gear?1.9:1)+.0011*Math.max(this.g-1,0)**2*s*.35;
     if(!dry)this.fuel=Math.max(0,this.fuel-(.25+.75*Math.min(this.thr,1)+2.2*ab)/this.fuelTime*dt*(st.mode==='tutorial'?.3:1));
@@ -667,14 +688,14 @@ const tracers=new THREE.LineSegments(trGeo,new THREE.LineBasicMaterial({vertexCo
 function fireGun(ac,spread){
   const g=ac.st.gun;const gi=ac.gunIdx=(ac.gunIdx+1)%ac.M.pts.gun.length;const p=ac.gunWorld(gi);
   const f=ac.fwd(new V3());f.x+=rnd(-spread,spread);f.y+=rnd(-spread,spread);f.z+=rnd(-spread,spread);f.normalize();
-  if(bullets.length<MAXB)bullets.push({p,o:p.clone(),v:f.multiplyScalar(g.spd).add(ac.vel),life:2.6,owner:ac,dmg:g.dmg*(ac.isPlayer?1:.7),big:g.dmg>12});
+  if(bullets.length<MAXB)bullets.push({p,o:p.clone(),v:f.multiplyScalar(g.spd).add(ac.vel),life:2.6,owner:ac,dmg:g.dmg*(ac.isPlayer?1:.7),big:g.dmg>12,vis:!!ac.netRemote});
   return p}
 const missiles=[],flares=[];
-function launchMissile(ac,type,target){
+function launchMissile(ac,type,target){if(NET.on&&!ac.netRemote)NET.ev({k:'msl',from:ac.nid,to:target&&target.nid,mt:type});
   const s=MSL[type];const off=ac.mslOffsets[ac.mslSide=(ac.mslSide+1)%2];
   const m={type,s,owner:ac,target,p:off.clone().applyQuaternion(ac.q).add(ac.pos),v:ac.vel.clone(),dir:ac.fwd(new V3()),spd:ac.speed,t:0,
     range:s.range*(ac.st.rangeMul||1),mesh:new THREE.Mesh(mslGeo,mslMat)};
-  m.mesh.position.copy(m.p);scene.add(m.mesh);missiles.push(m);
+  m.vis=!!ac.netRemote;m.mesh.position.copy(m.p);scene.add(m.mesh);missiles.push(m);
   if(ac===player||target===player)sfx.whoosh();return m}
 const mslGeo=new THREE.CylinderGeometry(.09,.09,3,8).rotateX(Math.PI/2),mslMat=new THREE.MeshStandardMaterial({color:'#dfe3e6',roughness:.5});
 
@@ -700,7 +721,7 @@ async function withLoading(ids){
 const decor=[];
 function parkPlanes(models){for(const b of BASES){const side=b.team===0?1:-1;for(let i=0;i<5;i++){const M=models[(i+b.team)%models.length];const inst=lightInstance(M,null);inst.gearNodes.forEach(n=>n.visible=true);
   const g=inst.grp;g.position.set(b.x-360+i*170,b.y+M.gearH+.3,b.z+side*150);g.rotation.y=side>0?Math.PI:0;scene.add(g);decor.push(g)}}}
-async function startMatch(){
+async function startMatch(){if(NET.code)NET.leave();NET.on=false;
   const pi=planeIndex(S.sel);const lo=Math.max(0,pi-2),hi=Math.min(PLANES.length-1,pi+2);
   const pool=PLANES.slice(lo,hi+1).map(p=>p.id);
   const allyT=pick(pool),enemyT=pick(pool);st.allyT=allyT;
@@ -715,7 +736,7 @@ async function startMatch(){
   aimToNose();feed(`데스매치 시작 · 먼저 ${st.goal}킬`, '#ffb547');
   enterFlight();
 }
-async function startTutorial(){
+async function startTutorial(){if(NET.code)NET.leave();NET.on=false;
   const Ms=await withLoading([S.sel,'su27']);st.allyT=S.sel;getModel('kc46').catch(()=>{});
   clearWorld();st.mode='tutorial';st.over=false;resetPlayerState();
   player=new Aircraft(Ms[S.sel],{team:0,name:'나',player:true,paint:paintColor(S.sel),stats:statsFor(PLANES[planeIndex(S.sel)],S.sel,true)});units.push(player);
@@ -729,12 +750,13 @@ function newAI(){return{mode:'attack',t:0,brk:1,fireCd:rnd(0,2),mslCd:rnd(3,9),l
 function enterFlight(){sfx.music(false);$('hangar').hidden=true;st.paused=false;sfx.init();sfx.resume();if(!isMobile())lockPointer();$('touch').hidden=!isMobile();last=performance.now()}
 function lockPointer(){try{const r=glc.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 
-function damage(u,d,src){if(!u.alive)return;u.hp-=d;if(u===player){st.dmgT=.35;st.shake=Math.min(st.shake+.4,1.2)}if(u.hp<=0)kill(u,src)}
+function damage(u,d,src){if(!u.alive)return;if(NET.on&&u.netRemote){NET.ev({k:'hit',to:u.nid,dmg:d,from:src&&src.nid});return}u.hp-=d;if(u===player){st.dmgT=.35;st.shake=Math.min(st.shake+.4,1.2)}if(u.hp<=0)kill(u,src)}
 function kill(u,src){
   u.alive=false;u.dead=10;u.spin=rnd(-2.5,2.5);u.thr=0;u.deaths++;u.respawnT=0;explosion(u.pos,1.1,u.vel);releaseRunway(u);u.ground=null;
   if(u.support){feed(`${u.name} 격추됨`,'#ff4a3d');return}
   const credit=src&&src!==u&&src.team!==u.team?src:null;
-  if(st.mode==='match'){st.score[1-u.team]++;if(credit)credit.kills++}
+  if(st.mode==='match'){if(!NET.on||NET.host){st.score[1-u.team]++;NET.on&&NET.pushScore()}if(credit)credit.kills++}
+  if(NET.on&&!u.netRemote)NET.ev({k:'dead',v:u.nid,by:credit?credit.nid:null,x:u.pos.x,y:u.pos.y,z:u.pos.z});
   if(credit===player){st.kills=(st.kills||0)+1}
   const nm=x=>`${x.name} (${x.P.name.split(' ')[0]})`;
   if(credit)feed(`${nm(credit)} ▸ ${nm(u)}`,credit.team===0?'#4aa8ff':'#ff4a3d');else feed(`${nm(u)} 추락`,'#8c9aa6');
@@ -802,15 +824,15 @@ $('vol').oninput=()=>{S.vol=+$('vol').value;$('volv').textContent=S.vol;sfx.volu
 $('devMobile').onclick=()=>chooseDevice('mobile');$('devPC').onclick=()=>chooseDevice('pc');
 function pauseGame(p){st.paused=p;$('pause').hidden=!p;if(!p)$('keysOv').hidden=true;if(p){syncSliders();sfx.gun(false);sfx.tone(null);st.fireHeld=false;touch.fire=touch.thrUp=touch.thrDn=false}}
 $('btnResume').onclick=()=>{pauseGame(false);if(!isMobile())lockPointer();last=performance.now()};
-$('btnQuit').onclick=()=>{pauseGame(false);toHangar()};
-function dropFlares(u){if(!u||!u.alive||u.flr<=0)return;if(u===player){if(st.flareCd>0)return;st.flareCd=.9;if(st.tut)st.tut.flared=true}
-  u.flr-=2;for(let i=0;i<2;i++){const v=u.vel.clone().multiplyScalar(.6).add(_v.set(rnd(-25,25),rnd(-30,-10),rnd(-25,25)));flares.push({p:u.pos.clone(),v,life:4})}
+$('btnQuit').onclick=()=>{pauseGame(false);NET.leave();toHangar()};
+function dropFlares(u,remote){if(!u||!u.alive||(!remote&&u.flr<=0))return;if(NET.on&&!remote&&!u.netRemote)NET.ev({k:'flr',from:u.nid});if(u===player){if(st.flareCd>0)return;st.flareCd=.9;if(st.tut)st.tut.flared=true}
+  if(!remote)u.flr-=2;for(let i=0;i<2;i++){const v=u.vel.clone().multiplyScalar(.6).add(_v.set(rnd(-25,25),rnd(-30,-10),rnd(-25,25)));flares.push({p:u.pos.clone(),v,life:4})}
   for(const m of missiles)if(m.target===u&&m.s.ir&&Math.random()<.65)m.target={decoy:true,ref:flares[flares.length-1]};
   for(const m of missiles)if(m.target===u&&!m.s.ir&&Math.random()<.25)m.target=null;
   if(u===player)sfx.shot(300,.15,.15,'sawtooth')}
 function toggleGear(){if(!player||!player.alive||player.ground)return;player.setGear(!player.gear);sfx.shot(160,.35,.12,'sawtooth');feed(player.gear?'착륙 기어 내림 · 아군 기지 활주로에 착륙하면 정비':'착륙 기어 올림','#8c9aa6')}
 async function callTanker(){
-  if(!player||!player.alive||st.paused)return;if(st.tanker){feed('급유기가 이미 오고 있습니다','#8c9aa6');return}
+  if(!player||!player.alive||st.paused)return;if(NET.on){feed('멀티플레이에서는 급유기를 부를 수 없어요','#8c9aa6');return}if(st.tanker){feed('급유기가 이미 오고 있습니다','#8c9aa6');return}
   if(st.tankerCd>0){feed(`급유기 재요청까지 ${Math.ceil(st.tankerCd)}초`,'#8c9aa6');return}
   st.tankerCd=90;let MK,ME;try{MK=await getModel('kc46');ME=await getModel(st.allyT||player.id)}catch(e){feed('급유기를 불러오지 못했습니다','#ff4a3d');st.tankerCd=0;return}
   if(!player)return;const f=player.fwd(new V3()).setY(0).normalize(),yaw=Math.atan2(f.x,f.z);const alt=clamp(player.pos.y,1500,4200);
@@ -877,14 +899,15 @@ function update(dt){
     if(u.dead>0){u.dead-=dt;u.vel.y-=G*dt;u.pos.addScaledVector(u.vel,dt);u.q.multiply(_q.setFromAxisAngle(_v.set(0,0,1),u.spin*dt));
       u.smokeT=(u.smokeT||0)-dt;if(u.smokeT<=0){u.smokeT=.03;fire.emit(u.pos,_v.set(0,0,0),4,9,.5,1,.5,.15,.9,1);smoke.emit(u.pos,_v.set(rnd(-3,3),rnd(-3,3),rnd(-3,3)),6,28,6,.1,.1,.1,.75,.6,1)}
       if(u.pos.y<ground(u.pos.x,u.pos.z)+2||u.dead<=0){explosion(u.pos,1.4);u.dead=0;u.grp.visible=false}}
-    else if(u.support){}
+    else if(u.support||u.netRemote){}
     else if(st.mode==='match'&&!st.over){u.respawnT+=dt;if(u.respawnT>5){const s=spawnPoint(u.team);u.place(s.p,s.yaw);if(u.ai)u.ai=newAI();if(u===player){aimToNose();st.lockT=0}}}
     else if(st.mode==='tutorial'&&u===player){u.respawnT+=dt;if(u.respawnT>3){u.place(new V3(0,2600,9000),Math.PI);aimToNose()}}}
+  if(NET.on)NET.tick(dt);
   for(const u of units)if(u.alive&&u.ai)ai(u,dt);
   if(st.tanker){const t=st.tanker;t.T.ai.life-=dt;if(P.fuel>=1&&st.refuel===false&&t.T.alive&&t.T.pos.distanceTo(P.pos)<400)t.full+=dt;if(!t.T.alive||t.T.ai.life<=0||t.full>10)dismissTanker()}
   // bullets
   for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];b.o.copy(b.p);b.v.y-=G*dt;b.p.addScaledVector(b.v,dt);b.life-=dt;let hit=false;
-    for(const t of units){if(!t.alive||t.team===b.owner.team)continue;const seg=_v.subVectors(b.p,b.o),to=_v2.subVectors(t.pos,b.o),L2=seg.lengthSq(),k=clamp(to.dot(seg)/L2,0,1);
+    for(const t of units){if(b.vis||!t.alive||t.team===b.owner.team)continue;const seg=_v.subVectors(b.p,b.o),to=_v2.subVectors(t.pos,b.o),L2=seg.lengthSq(),k=clamp(to.dot(seg)/L2,0,1);
       const cl=_v3.copy(b.o).addScaledVector(seg,k);if(cl.distanceToSquared(t.pos)<t.radius*t.radius){hit=true;damage(t,b.dmg,b.owner);
         fire.emit(cl,t.vel,b.big?2.5:1.5,b.big?6:4,.15,1,.8,.4,1,0);smoke.emit(cl,_v2.copy(t.vel).multiplyScalar(.9),1,6,1,.25,.25,.25,.5,1);if(b.owner===player){st.hitT=.15;sfx.hit()}break}}
     const gy=ground(b.p.x,b.p.z);if(hit||b.life<=0||b.p.y<gy){if(!hit&&b.p.y<gy+1&&Math.random()<.3)smoke.emit(b.p,_v.set(0,4,0),2,9,1.5,.5,.45,.35,.6,1);bullets.splice(i,1)}}
@@ -897,7 +920,7 @@ function update(dt){
     m.v.copy(m.dir).multiplyScalar(m.spd);m.p.addScaledVector(m.v,dt);m.mesh.position.copy(m.p);m.mesh.lookAt(_v2.copy(m.p).add(m.dir));
     if(m.t<s.burn)fire.emit(m.p,_v.copy(m.v).multiplyScalar(.1),1.6,3,.12,1,.75,.4,1,0);
     smoke.emit(m.p,_v.set(rnd(-1,1),rnd(-1,1),rnd(-1,1)),1.6,m.t<s.burn?9:5,m.t<s.burn?4.5:2,.92,.92,.92,m.t<s.burn?.55:.25,.8,.5);
-    let boom=false;for(const t of units){if(!t.alive||t.team===m.owner.team)continue;const d=t.pos.distanceTo(m.p);if(d<t.radius+6&&m.t>.6){boom=true;damage(t,s.dmg*clamp(1.4-d/22,.3,1),m.owner);break}}
+    let boom=false;for(const t of units){if(!t.alive||t.team===m.owner.team)continue;const d=t.pos.distanceTo(m.p);if(d<t.radius+6&&m.t>.6){boom=true;if(!m.vis)damage(t,s.dmg*clamp(1.4-d/22,.3,1),m.owner);break}}
     if(m.p.y<ground(m.p.x,m.p.z))boom=true;
     if(boom||m.t>s.life||m.t*m.spd>m.range*1.3){if(boom)explosion(m.p,.6);scene.remove(m.mesh);missiles.splice(i,1)}}
   for(let i=flares.length-1;i>=0;i--){const f=flares[i];f.life-=dt;f.v.y-=G*.5*dt;f.v.multiplyScalar(Math.exp(-dt*.8));f.p.addScaledVector(f.v,dt);fire.emit(f.p,_v.set(0,0,0),3,1,.25,1,.9,.6,1,0);smoke.emit(f.p,_v.set(0,1,0),1.5,5,2,.85,.85,.85,.3,.5);if(f.life<=0)flares.splice(i,1)}
@@ -966,8 +989,8 @@ function ai(e,dt){
 
 /* ================= match & tutorial rules ================= */
 function matchRules(){
-  if(st.over)return;const[b,r]=st.score;
-  if(b>=st.goal||r>=st.goal||st.time>=st.timeLimit)endMatch(b>r?'win':b<r?'lose':'draw');
+  if(st.over||(NET.on&&!NET.host))return;const[b,r]=st.score;
+  if(b>=st.goal||r>=st.goal||st.time>=st.timeLimit){NET.on&&NET.finish();const my=player.team,a=st.score[my],o=st.score[1-my];endMatch(a>o?'win':a<o?'lose':'draw')}
 }
 function endMatch(res){
   st.over=true;sfx.gun(false);sfx.tone(null);try{document.exitPointerLock()}catch(e){}
@@ -980,7 +1003,7 @@ function endMatch(res){
   $('rKv').innerHTML=rows.map(([a,b])=>`<span>${a}</span><b>${b}</b>`).join('');
   setTimeout(()=>{$('result').hidden=false},1200);
 }
-$('btnBack').onclick=()=>{$('result').hidden=true;toHangar()};
+$('btnBack').onclick=()=>{$('result').hidden=true;NET.leave();toHangar()};
 const TUT=[
   {m:'왼쪽 조이스틱을 밀면 조준원(○)이 움직이고 기체가 그쪽으로 선회합니다. 크게 한 바퀴 돌아보세요.',t:'마우스를 움직이면 조준원(○)이 움직이고 기체가 그쪽으로 선회합니다. 크게 한 바퀴 돌아보세요.',done:s=>s.turned>Math.PI*1.2},
   {m:'▲ 버튼을 눌러 스로틀을 끝까지 올리세요. ▼는 감속입니다.',t:'Shift로 스로틀을 끝까지 올리세요. 애프터버너가 있는 기체는 AB가 켜집니다. Enter는 감속입니다.',done:()=>player.thr>=player.maxThr()-.001},
@@ -1082,7 +1105,9 @@ function drawHUD(){
       hx.fillStyle='rgba(10,14,18,.7)';hx.fillRect(cx-190,Hh*.3-26,380,44);txt(msg,cx,Hh*.3,18,col,'center',700);
       if(g.phase==='service'){hx.fillStyle='rgba(255,255,255,.15)';hx.fillRect(cx-150,Hh*.3+8,300,4);hx.fillStyle=amber;hx.fillRect(cx-150,Hh*.3+8,300*g.t/SERVICE_T,4)}}
     const blink2=Math.floor(performance.now()/400)%2;
-    if(P.fuel<=0)txt('연료 고갈 · 엔진 정지',cx,Hh*.16,20,red,'center',700);
+    if(P.engineOut)txt('엔진 정지 · 활공해서 아무 땅에나 착륙하면 정비',cx,Hh*.16,20,red,'center',700);
+    else if(P.P.id==='f18'&&P.negT>2)txt(`음의 G ${P.negT.toFixed(1)}초 / 10초 · 넘으면 엔진 꺼짐`,cx,Hh*.16,18,P.negT>7?red:amber,'center',700);
+    else if(P.fuel<=0)txt('연료 고갈 · 엔진 정지',cx,Hh*.16,20,red,'center',700);
     else if(P.fuel<.2&&blink2)txt(mob?'연료 부족 · 기어 내리고 기지 착륙 또는 급유기':'연료 부족 · G 착륙 정비 또는 F1 급유기',cx,Hh*.16,17,amber,'center',700);
   }
   // flight data
@@ -1231,6 +1256,132 @@ function toHangar(){
   if(!S.owned[viewId])viewId=S.sel;renderHangar();renderPass();showHangarModel();
 }
 
+/* ================= multiplayer (room code, peer-to-peer via PeerJS) ================= */
+// The host's browser keeps the shared room state; everyone else connects to it with the room code.
+const PEER_LIB=location.protocol.startsWith('http')&&!/claude/.test(location.hostname)?'lib/peerjs.min.js':'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
+const TS={'.sv':'timestamp'};
+window.firebase=window.firebase||{database:{ServerValue:{TIMESTAMP:TS}}};
+class PeerDB{
+  constructor(){this.tree={};this.listeners=[];this.host=false;this.conns=new Set();this.hostConn=null;this.peer=null;this.offset=0;this.closed=false}
+  _split(p){return p.split('/').filter(Boolean)}
+  get(p){let n=this.tree;for(const k of this._split(p)){if(n==null||typeof n!=='object')return null;n=n[k]}return n===undefined?null:n}
+  _ts(v){if(v&&typeof v==='object'){if(v['.sv']==='timestamp')return Date.now()+this.offset;const o=Array.isArray(v)?[]:{};for(const k in v)o[k]=this._ts(v[k]);return o}return v}
+  _set(p,v){const ks=this._split(p);if(!ks.length){this.tree=v||{};return}let n=this.tree;for(let i=0;i<ks.length-1;i++){if(n[ks[i]]==null||typeof n[ks[i]]!=='object')n[ks[i]]={};n=n[ks[i]]}
+    if(v==null)delete n[ks[ks.length-1]];else n[ks[ks.length-1]]=v}
+  _fire(p){for(const l of [...this.listeners]){const lp=l.path;if(!(p.startsWith(lp)||lp.startsWith(p)))continue;
+    if(l.type==='value'){const v=this.get(lp),js=JSON.stringify(v);if(js!==l.last){l.last=js;l.cb({val:()=>v==null?null:JSON.parse(js)})}}
+    else{const v=this.get(lp)||{};for(const k in v){if(l.seen.has(k))continue;l.seen.add(k);const c=v[k];if(l.min!=null&&!(c&&c[l.ob]>=l.min))continue;l.cb({key:k,val:()=>c})}}}}
+  _apply(op){if(op.t==='set')this._set(op.p,op.v);else for(const k in op.v)this._set(op.p+'/'+k,op.v[k]);this._fire(op.p)}
+  op(o){o.v=this._ts(JSON.parse(JSON.stringify(o.v===undefined?null:o.v)));this._apply(o);
+    if(this.host){for(const c of this.conns)if(c.open)c.send({op:o})}else if(this.hostConn&&this.hostConn.open)this.hostConn.send({op:o})}
+  async load(){if(window.Peer)return;await new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=PEER_LIB;sc.onload=res;sc.onerror=()=>rej(new Error('연결 프로그램을 불러오지 못했어요'));document.head.appendChild(sc)})}
+  openHost(code){return new Promise((res,rej)=>{this.host=true;const pr=new Peer('skythunder-'+code.toLowerCase());this.peer=pr;
+    pr.on('open',()=>res());pr.on('error',e=>{if(e.type==='unavailable-id')rej(new Error('dup'));else if(!this.ready)rej(new Error('서버에 연결하지 못했어요'))});
+    pr.on('connection',c=>{c.dcPaths=[];c.on('open',()=>{this.conns.add(c);c.send({tree:this.tree,now:Date.now()})});
+      c.on('data',m=>{if(m.op){m.op.v=this._ts(m.op.v);this._apply(m.op);for(const o of this.conns)if(o!==c&&o.open)o.send({op:m.op})}else if(m.dc)c.dcPaths.push(m.dc)});
+      const gone=()=>{if(!this.conns.has(c))return;this.conns.delete(c);for(const p of c.dcPaths)this.op({t:'set',p,v:null})};c.on('close',gone);c.on('error',gone)});
+    setTimeout(()=>rej(new Error('서버 응답이 없어요')),12000)}).then(()=>{this.ready=true})}
+  openClient(code){return new Promise((res,rej)=>{const pr=new Peer();this.peer=pr;let done=false;
+    pr.on('error',e=>{if(!done){done=true;rej(new Error(e.type==='peer-unavailable'?'없는 방 코드예요':'연결에 실패했어요'))}});
+    pr.on('open',()=>{const c=pr.connect('skythunder-'+code.toLowerCase(),{reliable:true});this.hostConn=c;
+      c.on('data',m=>{if(m.tree){this.offset=m.now-Date.now();this.tree=m.tree;this._fire('');if(!done){done=true;res()}}else if(m.op)this._apply(m.op)});
+      const gone=()=>{if(this.closed)return;this.closed=true;this.tree={};this._fire('')};c.on('close',gone);c.on('error',gone)});
+    setTimeout(()=>{if(!done){done=true;rej(new Error('방을 찾을 수 없어요. 코드와 인터넷을 확인해 주세요'))}},12000)})}
+  destroy(){this.closed=true;try{this.peer&&this.peer.destroy()}catch(e){}this.listeners=[]}
+  ref(path){return new PRef(this,(path||'').replace(/^\/|\/$/g,''))}
+}
+class PRef{
+  constructor(db,path,q={}){this.db=db;this.path=path;this.q=q}
+  child(c){return new PRef(this.db,this.path+'/'+c)}
+  set(v){this.db.op({t:'set',p:this.path,v});return Promise.resolve()}
+  update(v){this.db.op({t:'update',p:this.path,v});return Promise.resolve()}
+  remove(){return this.set(null)}
+  push(v){return this.child('k'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)).set(v)}
+  once(){const v=this.db.get(this.path);return Promise.resolve({val:()=>v==null?null:JSON.parse(JSON.stringify(v))})}
+  on(type,cb){this.db.listeners.push({path:this.path,type,cb,seen:new Set(),ob:this.q.ob,min:this.q.min,last:undefined});this.db._fire(this.path);return cb}
+  off(){const L=this.db.listeners;for(let i=L.length-1;i>=0;i--)if(L[i].path.startsWith(this.path))L.splice(i,1)}
+  onDisconnect(){const self=this;return{remove(){if(!self.db.host&&self.db.hostConn&&self.db.hostConn.open)self.db.hostConn.send({dc:self.path})}}}
+  orderByChild(k){return new PRef(this.db,this.path,{...this.q,ob:k})}
+  startAt(v){return new PRef(this.db,this.path,{...this.q,min:v})}
+}
+const NET={on:false,host:false,db:null,uid:null,code:null,room:null,lobby:null,sendT:0,botT:0,remote:new Map(),evStart:0,started:false,
+  get offset(){return this.db?this.db.offset:0},
+  async init(){this.uid=S.uid||(S.uid='u'+Math.random().toString(36).slice(2,10));save();if(this.db){this.db.destroy();this.db=null}const db=new PeerDB();await db.load();return db},
+  now(){return Date.now()+this.offset},
+  me(){return{name:(S.name||'파일럿').slice(0,10),plane:S.sel}},
+  async create(){const AB='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let db,code;
+    for(let tries=0;tries<4;tries++){db=await this.init();code='';for(let i=0;i<5;i++)code+=AB[Math.floor(Math.random()*32)];
+      try{await db.openHost(code);break}catch(e){db.destroy();if(e.message!=='dup'||tries===3)throw e}}
+    this.db=db;await db.ref('rooms/'+code).set({host:this.uid,status:'lobby',created:TS,players:{[this.uid]:{...this.me(),team:0}}});this.host=true;this.enter(code)},
+  async join(code){code=code.toUpperCase().trim();const db=await this.init();try{await db.openClient(code)}catch(e){db.destroy();throw e}this.db=db;
+    const ref=db.ref('rooms/'+code);const r=(await ref.once('value')).val();
+    if(!r){db.destroy();this.db=null;throw new Error('없는 방 코드예요')}if(r.status!=='lobby'){db.destroy();this.db=null;throw new Error('이미 시작한 방이에요')}
+    const ps=Object.values(r.players||{});if(ps.length>=10){db.destroy();this.db=null;throw new Error('방이 꽉 찼어요')}
+    const t0=ps.filter(p=>p.team===0).length,t1=ps.length-t0;await ref.child('players/'+this.uid).set({...this.me(),team:t0<=t1?0:1});
+    ref.child('players/'+this.uid).onDisconnect().remove();ref.child('p/'+this.uid).onDisconnect().remove();this.host=false;this.enter(code)},
+  enter(code){this.code=code;this.room=this.db.ref('rooms/'+code);this.started=false;
+    this.room.on('value',s=>{const r=s.val();this.lobby=r;if(!r){if(this.code){const wasOver=st.over;this.leave();if(st.mode!=='hangar'&&!wasOver){toast('방장이 나가서 방이 닫혔어요');st.over=true;toHangar()}}return}
+      if(this.on){for(const u of units)if(u.netRemote&&!u.bot&&!(r.players||{})[u.nid]){u.alive=false;u.grp.visible=false}}
+      renderLobby();if(r.status==='playing'&&!this.started){this.started=true;startMP(r).catch(e=>{console.error(e);toast('멀티플레이 시작에 실패했어요');this.leave();toHangar()})}
+      if(r.score&&this.on&&!this.host)st.score=[r.score[0]||0,r.score[1]||0];
+      if(r.status==='over'&&this.on&&!this.host&&!st.over){const my=player.team,a=st.score[my],o=st.score[1-my];endMatch(a>o?'win':a<o?'lose':'draw')}})},
+  leave(){if(!this.room)return;const ref=this.room;try{ref.off();if(!this.host){ref.child('players/'+this.uid).remove();ref.child('p/'+this.uid).remove()}}catch(e){}
+    const db=this.db;setTimeout(()=>{try{db&&db.destroy()}catch(e){}},300);this.db=null;this.room=null;this.code=null;this.lobby=null;this.on=false;this.host=false;this.started=false;this.remote.clear();renderLobby()},
+  swap(){const p=this.lobby&&this.lobby.players&&this.lobby.players[this.uid];if(p)this.room.child('players/'+this.uid+'/team').set(1-p.team)},
+  ev(o){if(!this.room)return;o.s=this.uid;o.ts=firebase.database.ServerValue.TIMESTAMP;this.room.child('ev').push(o)},
+  pushScore(){if(this.host&&this.room)this.room.child('score').set(st.score)},
+  finish(){if(this.host&&this.room){this.room.child('score').set(st.score);this.room.child('status').set('over')}},
+  pack(u){const q=u.q,p=u.pos;return[+p.x.toFixed(1),+p.y.toFixed(1),+p.z.toFixed(1),+q.x.toFixed(4),+q.y.toFixed(4),+q.z.toFixed(4),+q.w.toFixed(4),Math.round(u.speed),Math.round(u.hp),u.alive?1:0,u.gear?1:0,u.firing?1:0,u.ab>.5?1:0]},
+  apply(u,a){if(!a)return;const n=u.net||(u.net={p:new V3(),q:new Q(),t:0,first:true});n.p.set(a[0],a[1],a[2]);n.q.set(a[3],a[4],a[5],a[6]);n.s=a[7];n.t=performance.now();
+    u.hp=a[8];const alive=!!a[9];if(alive&&!u.alive){u.alive=true;u.grp.visible=true;u.pos.copy(n.p);u.q.copy(n.q);u.dead=0}else if(!alive&&u.alive){u.alive=false;u.grp.visible=false}
+    if(n.first){u.pos.copy(n.p);u.q.copy(n.q);n.first=false}u.setGear(!!a[10]);u.firing=!!a[11];u.ab=a[12]?1:0},
+  tick(dt){const P=player;this.sendT-=dt;this.botT-=dt;
+    if(this.sendT<=0&&this.room){this.sendT=.1;P.firing=!!P.st.gun&&(st.fireHeld||touch.fire)&&P.ammo>0&&P.alive;this.room.child('p/'+this.uid).set(this.pack(P))}
+    if(this.host&&this.botT<=0&&this.room){this.botT=.12;const o={};for(const u of units)if(u.bot)o[u.nid]=this.pack(u);this.room.child('b').set(o)}
+    const now=performance.now();
+    for(const u of units){if(!u.netRemote||!u.net)continue;const n=u.net,age=Math.min((now-n.t)/1000,.6);
+      const pred=_v.set(0,0,1).applyQuaternion(n.q).multiplyScalar(n.s*age).add(n.p);u.pos.lerp(pred,1-Math.exp(-dt*9));u.q.slerp(n.q,1-Math.exp(-dt*9));
+      u.speed=n.s;u.dir.set(0,0,1).applyQuaternion(u.q);u.vel.copy(u.dir).multiplyScalar(u.speed);u.updFlames(dt);
+      if(u.firing&&u.alive&&u.st.gun){u.fireT=(u.fireT||0)-dt;while(u.fireT<=0){u.fireT+=1/Math.min(u.st.gun.rate,30);fireGun(u,.006)}}}},
+  onEvent(e){if(!e||e.s===this.uid||(e.ts&&e.ts<this.evStart))return;const U=id=>units.find(u=>u.nid===id);
+    if(e.k==='hit'){const t=U(e.to);if(!t||t.netRemote)return;damage(t,e.dmg,U(e.from))}
+    else if(e.k==='dead'){const v=U(e.v),b=e.by?U(e.by):null;if(!v)return;explosion(_v3.set(e.x,e.y,e.z).clone(),1.1);v.alive=false;v.grp.visible=false;
+      if(this.host){st.score[1-v.team]++;this.pushScore()}if(b===player)player.kills++;
+      const nm=x=>`${x.name} (${x.P.name.split(' ')[0]})`;if(b)feed(`${nm(b)} ▸ ${nm(v)}`,b.team===0?'#4aa8ff':'#ff4a3d');else feed(`${nm(v)} 추락`,'#8c9aa6');if(b===player)sfx.shot(500,.25,.2,'triangle')}
+    else if(e.k==='msl'){const f=U(e.from);if(f&&MSL[e.mt])launchMissile(f,e.mt,e.to?U(e.to):null)}
+    else if(e.k==='flr'){const f=U(e.from);if(f)dropFlares(f,true)}},
+};
+async function startMP(r){
+  const pl=r.players||{},humans=Object.entries(pl).map(([uid,p])=>({uid,...p}));const st0=r.start||{};
+  const bots=st0.bots||[];const ids=[...new Set([S.sel,...humans.map(h=>h.plane),...bots.map(b=>b.plane)].filter(id=>PLANES.some(p=>p.id===id)))];
+  const Ms=await withLoading(ids);clearWorld();st.mode='match';st.score=[0,0];st.time=0;st.over=false;st.tut=null;resetPlayerState();NET.on=true;
+  NET.evStart=NET.now()-1500;NET.room.child('ev').orderByChild('ts').startAt(NET.evStart).on('child_added',s=>NET.onEvent(s.val()));
+  const me=pl[NET.uid]||{team:0};
+  player=new Aircraft(Ms[S.sel],{team:me.team,name:S.name||'나',player:true,paint:paintColor(S.sel),stats:statsFor(PLANES[planeIndex(S.sel)],S.sel,true)});player.nid=NET.uid;units.push(player);
+  for(const h of humans){if(h.uid===NET.uid)continue;const M=Ms[h.plane]||Ms[S.sel];const u=new Aircraft(M,{team:h.team,name:h.name});u.nid=h.uid;u.netRemote=true;u.alive=false;u.grp.visible=false;units.push(u);
+    NET.room.child('p/'+h.uid).on('value',s=>NET.apply(u,s.val()))}
+  for(const b of bots){const u=new Aircraft(Ms[b.plane]||Ms[S.sel],{team:b.team,name:b.name});u.nid=b.id;u.bot=true;units.push(u);
+    if(NET.host){const sp=spawnPoint(b.team);u.place(sp.p,sp.yaw);u.ai=newAI()}else{u.netRemote=true;u.alive=false;u.grp.visible=false}}
+  if(!NET.host)NET.room.child('b').on('value',s=>{const o=s.val()||{};for(const u of units)if(u.bot&&o[u.nid])NET.apply(u,o[u.nid])});
+  const sp=spawnPoint(me.team);player.place(sp.p,sp.yaw);aimToNose();parkPlanes(ids.map(id=>Ms[id]).slice(0,3));
+  st.goal=20;feed(`멀티플레이 시작 · ${me.team===0?'블루':'레드'}팀 · 먼저 ${st.goal}킬`,'#ffb547');$('mpOv').hidden=true;enterFlight();
+}
+function renderLobby(){const r=NET.lobby;$('mpMenu').hidden=!!NET.code;$('mpRoom').hidden=!NET.code;if(!r)return;$('mpRoomCode').textContent=NET.code;
+  const ps=Object.entries(r.players||{});for(const t of[0,1]){const list=ps.filter(([,p])=>p.team===t);
+    $('mpT'+t).innerHTML=list.map(([uid,p])=>`<li><b>${(p.name||'').replace(/[<>&]/g,'')}${uid===r.host?' ★':''}${uid===NET.uid?' (나)':''}</b><span>${(PLANES.find(x=>x.id===p.plane)||{name:'?'}).name.split(' ')[0]}</span></li>`).join('')+`<li><span>AI ${5-list.length}대</span></li>`}
+  $('mpStart').hidden=!NET.host;$('mpStart').disabled=r.status!=='lobby';$('mpMsg').textContent=NET.host?'모두 들어오면 시작을 누르세요.':'방장이 시작하기를 기다리는 중…'}
+$('btnMP').onclick=()=>{$('mpName').value=S.name||'';$('mpMsg').textContent=/claude/.test(location.hostname)?'멀티플레이는 깃허브 게임 주소에서만 돼요.':'';$('mpMsg').style.color='';renderLobby();$('mpOv').hidden=false};
+$('mpClose').onclick=()=>{$('mpOv').hidden=true};
+$('mpName').oninput=()=>{S.name=$('mpName').value.trim();save()};
+const mpErr=e=>{$('mpMsg').textContent=e.message||'연결에 실패했어요';$('mpMsg').style.color='var(--red)'};
+$('mpCreate').onclick=()=>{sfx.init();$('mpMsg').style.color='';$('mpMsg').textContent='방 만드는 중…';NET.create().then(()=>renderLobby()).catch(mpErr)};
+$('mpJoin').onclick=()=>{sfx.init();$('mpMsg').style.color='';const c=$('mpCode').value;if(c.trim().length!==5){$('mpMsg').textContent='방 코드 5자리를 넣어주세요';return}$('mpMsg').textContent='방에 연결하는 중…';NET.join(c).then(()=>renderLobby()).catch(mpErr)};
+$('mpSwap').onclick=()=>NET.swap();$('mpLeave').onclick=()=>NET.leave();
+$('mpStart').onclick=async()=>{const r=NET.lobby;if(!r||!NET.host)return;const ps=Object.values(r.players||{});const pi=planeIndex(S.sel);
+  const pool=PLANES.slice(Math.max(0,pi-2),Math.min(PLANES.length,pi+3)).map(p=>p.id);const bots=[];let n=0;
+  for(const t of[0,1]){const have=ps.filter(p=>p.team===t).length;for(let i=have;i<5;i++)bots.push({id:'b'+(n++),team:t,plane:pick(pool),name:'AI '+CALL[t][i%CALL[t].length]})}
+  await NET.room.update({start:{bots},status:'playing',score:[0,0]})};
+
 /* ================= loop ================= */
 let lastFilter='';
 function gFilter(){const ge=st.mode==='hangar'?1:st.gEff;const gray=clamp((ge-5)/1.2,0,1),dark=st.gloc>0?.97:clamp((ge-7)/2.2,0,.9);
@@ -1240,7 +1391,7 @@ function frame(now){
   if(st.mode==='hangar'){if(lastFilter){glc.style.filter='';lastFilter=''}
     if(hDrag==null)hYaw+=dt*.12;const r=hLen*1.75+9;hCam.position.set(Math.sin(hYaw)*r,hLen*.42+3,Math.cos(hYaw)*r);hCam.lookAt(0,hLen*.12,0);
     renderer.render(hScene,hCam);drawHUD();return}
-  if(player){if(!st.paused)update(dt);updateCamera(dt);gFilter();player.grp.visible=player.alive||player.dead>0}
+  if(player){if(!st.paused||NET.on)update(dt);updateCamera(dt);gFilter();player.grp.visible=player.alive||player.dead>0}
   renderer.render(scene,camera);drawHUD();
 }
 resize();toHangar();if(!S.device){$('devOv').hidden=false;$('devMobile').classList.toggle('primary',matchMedia('(pointer:coarse)').matches);$('devPC').classList.toggle('primary',!matchMedia('(pointer:coarse)').matches)}else applyDevice();
@@ -1249,7 +1400,7 @@ const lobbyMusic=()=>{if(st.mode==='hangar'&&S.music!==false){sfx.init();sfx.res
 addEventListener('pointerdown',lobbyMusic);addEventListener('keydown',lobbyMusic);
 $('btnMus').textContent=S.music===false?'음악 켜기':'음악 끄기';
 $('btnMus').onclick=()=>{S.music=S.music===false;save();$('btnMus').textContent=S.music===false?'음악 켜기':'음악 끄기';if(S.music===false)sfx.music(false);else lobbyMusic()};requestAnimationFrame(frame);
-window.__game={H,hModel:()=>hModel,st,S,units:()=>units,player:()=>player,update,THREE,aimDir,startMatch,startTutorial,toHangar,save};
+window.__game={getModel,withLoading,NET,H,hModel:()=>hModel,st,S,units:()=>units,player:()=>player,update,THREE,aimDir,startMatch,startTutorial,toHangar,save};
 </script>
 
 </body>
