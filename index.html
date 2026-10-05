@@ -67,7 +67,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .up{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding-block:6px;border-bottom:1px solid var(--line)}
 .up .nm2{font-size:13px}.up .ef{font-size:11px;color:var(--dim)}
 .pips{display:flex;gap:3px}.pips i{width:16px;height:5px;background:var(--line);border-radius:1px}.pips i.on{background:var(--hud)}
-.up button{grid-row:1/3;grid-column:2;font-size:12px;padding:7px 10px}
+.upb{grid-row:1/3;grid-column:2;display:flex;gap:4px}.upb button{font-size:12px;padding:7px 10px}.up .num{font-size:12px;color:var(--amber)}
+.pips i{width:9px}
 .foot{grid-column:1/-1;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap}
 .hint{font-size:12px;color:var(--dim)}
 .toast{position:fixed;left:50%;top:84px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--amber);color:var(--ink);padding:10px 16px;border-radius:4px;font-size:14px;z-index:9}
@@ -102,6 +103,19 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #portrait{position:fixed;inset:0;z-index:7;display:grid;place-items:center;background:rgba(6,8,10,.92);text-align:center;padding:16px;font-size:16px}
 #devOv .row button{flex:1;min-width:140px;padding:22px 10px;font-size:18px}
 .devbtn{font-size:12px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.seg button[aria-checked="true"]{background:var(--amber);color:#1a1205;border-color:var(--amber)}
+#keysOv{z-index:8}
+.shop{max-height:calc(100vh - 32px);overflow:auto}
+.crate{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px;border:1px solid var(--amber);border-radius:6px;background:rgba(255,181,71,.07)}
+.crate b{font-size:34px;color:var(--amber);margin-right:6px}
+.loot{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;align-items:center}
+.loot .chip{font-size:12px;padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);animation:pop .35s ease both}
+.loot .chip.c{border-color:var(--amber);color:var(--amber)}.loot .chip.big{border-color:var(--hud);color:var(--hud)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.loot .chip{animation:none}}
+.parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.parts div{display:flex;justify-content:space-between;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:4px}.parts b{font-family:var(--f-ui)}
+.item{padding:12px;border:1px solid var(--line);border-radius:6px}
 @media (max-width:860px){#hangar{grid-template-columns:1fr;grid-template-rows:auto 160px 1fr auto auto;overflow:auto}.stage{min-height:120px}}
 </style>
 </head>
@@ -117,6 +131,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <div class="lvl"><span class="hint">격납고</span><b class="num" id="hLvl">Lv 1</b><div><div class="prog"><i id="hProg"></i></div><div class="hint" id="hProgT">다음 레벨까지 0/10판</div></div></div>
     <button class="devbtn" id="btnMus">음악 끄기</button>
     <button class="devbtn" id="btnDev">조작: PC</button>
+    <button class="pass" id="btnShop">상점</button>
     <button class="pass" id="btnPass">개발자 패스</button>
     <div class="coins">전투기 코인 <b class="num" id="hCoins">0</b></div>
   </div>
@@ -137,9 +152,19 @@ button:disabled{opacity:.45;cursor:not-allowed}
   </div>
 </div>
 
+<div class="ov" id="shopOv" hidden><div class="sheet shop">
+  <div class="hint">SUPPLY</div><h2>상점 · 보급 상자</h2>
+  <div class="crate"><div><b class="num" id="crN">0</b><span class="hint">개 보유</span></div><div class="row"><button class="primary" id="crOpen1" style="padding:12px 20px;font-size:15px">1개 열기</button><button id="crOpen10">10개 열기</button></div></div>
+  <div class="loot" id="loot" role="status" aria-live="polite"><span class="hint">상자에서는 업그레이드 부품(터빈 블레이드 · 복합 장갑판 · 강화 총열 · 적외선 탐색기)이나 코인이 나와요. 판이 끝날 때도 상자를 받을 수 있어요.</span></div>
+  <div><div class="hint" style="margin-bottom:6px">부품 창고</div><div class="parts" id="partsList"></div></div>
+  <div class="item"><div><b>보급 상자 10개</b><div class="hint">10,000원 · 구매하면 받은 코드를 입력하세요 (BOX-XXXX-XXXX-XXXX)</div></div></div>
+  <div class="row"><input id="boxCode" placeholder="BOX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-family:var(--f-ui);font-size:16px;letter-spacing:.08em;text-transform:uppercase;background:rgba(0,0,0,.3);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:10px 12px"><button class="primary" id="boxApply" style="padding:10px 18px;font-size:14px">코드 적용</button></div>
+  <div class="hint" id="boxMsg" role="status"></div>
+  <div class="row"><button id="shopClose">닫기</button></div>
+</div></div>
 <div class="ov" id="passOv" hidden><div class="sheet">
   <div class="hint">DEVELOPER PASS</div><h2>개발자 패스</h2>
-  <div class="kv"><span>내용</span><b>전투기 14대 전부 해금</b><span>가격</span><b>100,000원</b></div>
+  <div class="kv"><span>내용</span><b>전투기 14대 해금 · 코인 · 부품 · 상자 · 업그레이드 무한</b><span>가격</span><b>100,000원</b></div>
   <p class="hint" style="margin:0" id="passInfo">구매하면 받은 코드를 입력하세요. 코드는 DEV-XXXX-XXXX-XXXX 형식입니다.</p>
   <div class="row"><input id="passCode" placeholder="DEV-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-family:var(--f-ui);font-size:16px;letter-spacing:.08em;text-transform:uppercase;background:rgba(0,0,0,.3);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:10px 12px"><button class="primary" id="passApply" style="padding:10px 18px;font-size:14px">코드 적용</button></div>
   <div class="hint" id="passMsg" role="status"></div>
@@ -171,15 +196,21 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <div><span>미사일 (락온 필요)</span><b>우클릭 · Space</b></div><div><span>미사일 종류</span><b>1 · 2</b></div>
     <div><span>스로틀 ↑ / ↓</span><b>Shift · Enter · 휠</b></div><div><span>착륙 기어</span><b>G</b></div><div><span>공중급유기 호출</span><b>F1</b></div><div><span>시점 전환</span><b>V</b></div>
     <div><span>자유 시점</span><b>C 누르기</b></div><div><span>플레어</span><b>F</b></div>
-    <div><span>수동 조종</span><b>W S A D Q E · 방향키</b></div><div><span>음소거 · 일시정지</span><b>M · Esc</b></div>
+    <div><span>수동 조종</span><b>W S A D Q E · 방향키</b></div><div><span>음소거 · 일시정지(설정)</span><b>M · Esc</b></div>
   </div>
+  <p class="hint" style="margin:0">모바일: 왼쪽 조이스틱 조준 · 오른쪽 기관포/미사일/플레어/무장전환 · ▲▼ 스로틀 · 위쪽 시점/기어/급유기 · Ⅱ 일시정지</p>
   <div class="row"><label class="hint" for="sens">마우스 감도</label><input id="sens" type="range" min="1" max="10" value="5" style="flex:1;accent-color:var(--amber)"><b class="num" id="sensv">5</b></div>
   <div class="row"><button id="keysClose">닫기</button></div>
 </div></div>
 
 <div class="ov" id="pause" hidden><div class="sheet">
-  <h2>일시정지</h2><p class="hint" style="margin:0">지금 나가면 이번 판 보상은 받지 못합니다.</p>
-  <div class="row"><button class="primary" id="btnResume">계속하기</button><button id="btnQuit">격납고로 나가기</button></div>
+  <div class="hint">PAUSED</div><h2>일시정지</h2><p class="hint" style="margin:0">게임이 멈춰 있어요. 지금 나가면 이번 판 보상은 받지 못합니다.</p>
+  <div><div class="hint" style="margin-bottom:6px">그래픽 화질</div>
+    <div class="seg" role="radiogroup" aria-label="그래픽 화질"><button data-q="low" role="radio">낮음</button><button data-q="mid" role="radio">보통</button><button data-q="high" role="radio">높음</button></div>
+    <div class="hint" id="qInfo" style="margin-top:6px"></div></div>
+  <div class="row"><label class="hint" for="sens2">조작 감도</label><input id="sens2" type="range" min="1" max="10" style="flex:1;accent-color:var(--amber)"><b class="num" id="sens2v">5</b></div>
+  <div class="row"><label class="hint" for="vol">소리</label><input id="vol" type="range" min="0" max="10" style="flex:1;accent-color:var(--amber)"><b class="num" id="volv">6</b></div>
+  <div class="row"><button class="primary" id="btnResume">계속하기</button><button id="btnHelp">조작법</button><button id="btnQuit">격납고로 나가기</button></div>
 </div></div>
 
 <div class="ov" id="result" hidden><div class="sheet">
@@ -207,19 +238,23 @@ const _v=new V3(),_v2=new V3(),_v3=new V3(),_q=new Q();
 /* ================= save ================= */
 const SAVE_KEY='tomcat-save-v2';
 const S=(()=>{let s=null;try{s=JSON.parse(localStorage.getItem(SAVE_KEY))}catch(e){}
-  return Object.assign({coins:0,matches:0,tut:false,owned:{f5:true},sel:'f5',paint:{},up:{},sens:5},s||{})})();
+  return Object.assign({coins:0,matches:0,tut:false,owned:{f5:true},sel:'f5',paint:{},up:{},sens:5,crates:0,parts:{eng:0,arm:0,gun:0,msl:0},used:[]},s||{})})();
+S.parts=Object.assign({eng:0,arm:0,gun:0,msl:0},S.parts||{});S.used=S.used||[];S.crates=S.crates||0;
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
 const hangarLevel=()=>1+Math.floor(S.matches/10);
 const planeIndex=id=>PLANES.findIndex(p=>p.id===id);
 const reqLevel=i=>i+1;              // plane #i opens at hangar level i+1 = every 10 matches
-const UPS=[{k:'eng',n:'엔진',e:'추력 +5%/단계'},{k:'arm',n:'장갑',e:'체력 +8%/단계'},{k:'gun',n:'기관포',e:'피해 +7%/단계'},{k:'msl',n:'미사일',e:'락온 −8% · 사거리 +6%/단계'}];
+const MAXUP=10;
+const UPS=[{k:'eng',n:'엔진',e:'추력 +3%/단계',part:'터빈 블레이드'},{k:'arm',n:'장갑',e:'체력 +5%/단계',part:'복합 장갑판'},{k:'gun',n:'기관포',e:'피해 +4%/단계',part:'강화 총열'},{k:'msl',n:'미사일',e:'락온 −4% · 사거리 +4%/단계',part:'적외선 탐색기'}];
+const partName=k=>UPS.find(u=>u.k===k).part;
+const partCost=lv=>lv+1;
 const upLv=(id,k)=>(S.up[id]&&S.up[id][k])||0;
-const upCost=(id,lv)=>Math.round((140+planeIndex(id)*45)*(lv+1)/10)*10;
+const upCost=(id,lv)=>Math.round((80+planeIndex(id)*25)*(lv+1)/10)*10;
 function statsFor(P,id,withUp=true){
   const u=k=>withUp?upLv(id,k):0;
-  return{hp:Math.round(P.hp*(1+.08*u('arm'))),mil:P.mil*(1+.05*u('eng')),ab:P.ab*(1+.05*u('eng')),turn:P.turn,
-    gun:P.gun?{...P.gun,dmg:P.gun.dmg*(1+.07*u('gun'))}:null,msl:P.msl.map(m=>[...m]),flr:P.flr,
-    lockMul:1-.08*u('msl'),rangeMul:1+.06*u('msl'),stealth:P.stealth||0};
+  return{hp:Math.round(P.hp*(1+.05*u('arm'))),mil:P.mil*(1+.03*u('eng')),ab:P.ab*(1+.03*u('eng')),turn:P.turn,
+    gun:P.gun?{...P.gun,dmg:P.gun.dmg*(1+.04*u('gun'))}:null,msl:P.msl.map(m=>[...m]),flr:P.flr,
+    lockMul:1-.04*u('msl'),rangeMul:1+.04*u('msl'),stealth:P.stealth||0};
 }
 const topSpeed=st=>Math.sqrt((st.mil+st.ab)/1.35e-4)*3.6;
 
@@ -280,6 +315,7 @@ function runwayAt(p){for(const b of BASES){if(Math.abs(p.x-b.x)<b.len/2+40&&Math
   const wg=new THREE.PlaneGeometry(400000,400000);wg.rotateX(-Math.PI/2);
   const water=new THREE.Mesh(wg,new THREE.MeshStandardMaterial({color:'#123f5a',roughness:.14,metalness:.05,normalMap:wn,normalScale:new THREE.Vector2(.35,.35)}));water.receiveShadow=true;scene.add(water);
 }
+let cloudMesh=null;
 { // clouds
   const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
   for(let i=0;i<26;i++){const px=rnd(30,98),py=rnd(34,94),r=rnd(14,34),g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,128,128)}
@@ -300,7 +336,7 @@ function runwayAt(p){for(const b of BASES){if(Math.abs(p.x-b.x)<b.len/2+40&&Math
     void main(){
     #include <logdepthbuf_fragment>
     vec4 t=texture2D(map,vUv);vec3 c=mix(vec3(.62,.67,.74),vec3(1.,.99,.96),smoothstep(.15,.85,vUv.y))*vS;c=mix(c,fogC,smoothstep(6000.,40000.,vF));gl_FragColor=vec4(c,t.a*vNear*.95);}`});
-  const cl=new THREE.Mesh(g,mat);cl.frustumCulled=false;cl.renderOrder=5;scene.add(cl);
+  const cl=new THREE.Mesh(g,mat);cl.frustumCulled=false;cl.renderOrder=5;scene.add(cl);cloudMesh=cl;
 }
 
 /* ================= air bases ================= */
@@ -379,14 +415,14 @@ const sfx=(()=>{let ctx=null,master,eng={},gun={},tone={},muted=false,brown,whit
   const wb=()=>{const b=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b};
   const src=b=>{const s=ctx.createBufferSource();s.buffer=b;s.loop=true;s.start();return s};
   return{
-    init(){if(ctx)return;try{ctx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){return}master=ctx.createGain();master.gain.value=.6;master.connect(ctx.destination);brown=nb();white=wb();
+    init(){if(ctx)return;try{ctx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){return}master=ctx.createGain();master.gain.value=(S.vol??6)/10;master.connect(ctx.destination);brown=nb();white=wb();
       eng.f=ctx.createBiquadFilter();eng.f.type='lowpass';eng.g=ctx.createGain();eng.g.gain.value=0;src(brown).connect(eng.f).connect(eng.g).connect(master);
       eng.wf=ctx.createBiquadFilter();eng.wf.type='bandpass';eng.wf.Q.value=.6;eng.wg=ctx.createGain();eng.wg.gain.value=0;src(white).connect(eng.wf).connect(eng.wg).connect(master);
       gun.g=ctx.createGain();gun.g.gain.value=0;const gf=ctx.createBiquadFilter();gf.type='bandpass';gf.frequency.value=700;gf.Q.value=.7;const am=ctx.createGain();am.gain.value=0;
       gun.lfo=ctx.createOscillator();gun.lfo.type='square';gun.lfo.frequency.value=100;const lg=ctx.createGain();lg.gain.value=.5;gun.lfo.connect(lg).connect(am.gain);gun.lfo.start();
       const bias=ctx.createConstantSource();bias.offset.value=.5;bias.connect(am.gain);bias.start();src(white).connect(gf).connect(am).connect(gun.g).connect(master);
       tone.o=ctx.createOscillator();tone.o.type='square';tone.g=ctx.createGain();tone.g.gain.value=0;const tf=ctx.createBiquadFilter();tf.type='lowpass';tf.frequency.value=2500;tone.o.connect(tf).connect(tone.g).connect(master);tone.o.start()},
-    resume(){ctx&&ctx.resume()},toggle(){muted=!muted;if(master)master.gain.value=muted?0:.6;return muted},
+    resume(){ctx&&ctx.resume()},vol:.6,volume(v){this.vol=v;if(master&&!muted)master.gain.value=v},toggle(){muted=!muted;if(master)master.gain.value=muted?0:this.vol;return muted},
     engine(thr,ab,spd){if(!ctx)return;const t=ctx.currentTime;eng.f.frequency.setTargetAtTime(180+Math.max(thr,0)*700+ab*500,t,.1);eng.g.gain.setTargetAtTime(thr<0?0:.25+thr*.35+ab*.5,t,.1);
       eng.wf.frequency.setTargetAtTime(600+spd*4,t,.2);eng.wg.gain.setTargetAtTime(thr<0?0:clamp(spd/500,0,1)*.08,t,.2)},
     gun(on,rate=100){if(!ctx)return;gun.lfo.frequency.value=rate;gun.g.gain.setTargetAtTime(on?.9:0,ctx.currentTime,.012)},
@@ -433,6 +469,22 @@ function bakeSkins(root){ // some files ship as skinned meshes; freeze them into
     // skinned vertices are relative to the bind pose; keep the mesh's own transform (bindMode attached)
     sm.parent.add(m);sm.parent.remove(sm)}
 }
+/* separate the landing gear (wheels and lower struts) of models that bake it into the airframe, so it can retract */
+function splitGear(root,minY,len){
+  root.updateMatrixWorld(true);const cut=minY+Math.min(1.35,len*.075);const list=[];root.traverse(o=>{if(o.isMesh&&!o.material.transparent)list.push(o)});const v=new THREE.Vector3();
+  for(const m of list){const g=m.geometry,pos=g.attributes.position,n=pos.count;const idx=g.index?g.index.array:Uint32Array.from({length:n},(_,i)=>i);
+    const wy=new Float32Array(n),wx=new Float32Array(n),wz=new Float32Array(n);for(let i=0;i<n;i++){v.fromBufferAttribute(pos,i).applyMatrix4(m.matrixWorld);wx[i]=v.x;wy[i]=v.y;wz[i]=v.z}
+    let low=0;for(let i=0;i<n;i++)if(wy[i]<cut)low++;if(!low)continue;
+    const par=new Int32Array(n);for(let i=0;i<n;i++)par[i]=i;const find=a=>{while(par[a]!==a){par[a]=par[par[a]];a=par[a]}return a};const uni=(a,b)=>{a=find(a);b=find(b);if(a!==b)par[a]=b};
+    const weld=new Map();for(let i=0;i<n;i++){const k=Math.round(wx[i]*200)+','+Math.round(wy[i]*200)+','+Math.round(wz[i]*200);const j=weld.get(k);if(j===undefined)weld.set(k,i);else uni(i,j)}
+    for(let t=0;t<idx.length;t+=3){uni(idx[t],idx[t+1]);uni(idx[t],idx[t+2])}
+    const bb=new Map();for(let i=0;i<n;i++){const r=find(i);let b=bb.get(r);if(!b){b=[1e9,-1e9,1e9,-1e9,1e9,-1e9];bb.set(r,b)}
+      if(wx[i]<b[0])b[0]=wx[i];if(wx[i]>b[1])b[1]=wx[i];if(wy[i]<b[2])b[2]=wy[i];if(wy[i]>b[3])b[3]=wy[i];if(wz[i]<b[4])b[4]=wz[i];if(wz[i]>b[5])b[5]=wz[i]}
+    const isGear=new Set();for(const[r,b]of bb)if(b[3]<cut&&b[1]-b[0]<4&&b[5]-b[4]<5)isGear.add(r);if(!isGear.size)continue;
+    const gi=[],bi=[];for(let t=0;t<idx.length;t+=3)(isGear.has(find(idx[t]))?gi:bi).push(idx[t],idx[t+1],idx[t+2]);if(!gi.length)continue;
+    const gg=g.clone();gg.setIndex(gi);g.setIndex(bi);const gm=new THREE.Mesh(gg,m.material);gm.name='gearpart';gm.userData.gear=true;
+    gm.position.copy(m.position);gm.quaternion.copy(m.quaternion);gm.scale.copy(m.scale);m.parent.add(gm)}
+}
 function fixMaterials(root){ // show each file's own texture colors: no metal sheen that would mirror the sky onto the paint
   root.traverse(o=>{if(!o.isMesh)return;const ms=Array.isArray(o.material)?o.material:[o.material];
     for(const m of ms){if(!m.transparent){m.metalness=Math.min(m.metalness,.05);m.roughness=Math.max(m.roughness,.55)}m.envMapIntensity=.6}})}
@@ -447,9 +499,9 @@ function toPlainGeo(o){const g=new THREE.BufferGeometry(),sg=o.geometry;
   g.setIndex(sg.index?Array.from(sg.index.array):[...Array(sg.attributes.position.count).keys()]);if(!g.attributes.normal)g.computeVertexNormals();return g}
 function buildTemplate(root,f14){
   const holder=root.clone(true);const{L,R}=f14?setupSweep(holder):{L:new THREE.Group(),R:new THREE.Group()};if(!f14)holder.add(L,R);holder.updateMatrixWorld(true);
-  const b=[new Map(),new Map(),new Map()],inv=[holder.matrixWorld.clone().invert(),L.matrixWorld.clone().invert(),R.matrixWorld.clone().invert()];
+  const b=[new Map(),new Map(),new Map(),new Map()],inv=[holder.matrixWorld.clone().invert(),L.matrixWorld.clone().invert(),R.matrixWorld.clone().invert(),holder.matrixWorld.clone().invert()];
   holder.traverse(o=>{if(!o.isMesh)return;if(f14){const t=isF14Ext(o);if(t.skip||!t.ext)return}
-    let a=o,cat=0;while(a){if(a===L)cat=1;if(a===R)cat=2;a=a.parent}
+    let a=o,cat=0;while(a){if(a===L)cat=1;if(a===R)cat=2;a=a.parent}if(o.userData.gear)cat=3;
     const g=toPlainGeo(o);g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv[cat],o.matrixWorld));const m=o.material;if(!b[cat].has(m))b[cat].set(m,[]);b[cat].get(m).push(g)});
   return b.map(x=>[...x].map(([mat,gs])=>({mat,geo:mergeGeometries(gs,false)})));
 }
@@ -464,7 +516,7 @@ function getModel(id,onp){
     const gltf=await loader.parseAsync(buf,'');bakeSkins(gltf.scene);fixMaterials(gltf.scene);
     const M=prepModel(THREE,gltf.scene,P);
     M.root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
-    const box=M.box,size=box.getSize(new V3());M.root.updateMatrixWorld(true);const gb=new THREE.Box3().setFromObject(M.root,true);
+    const box=M.box,size=box.getSize(new V3());M.root.updateMatrixWorld(true);const gb=new THREE.Box3().setFromObject(M.root,true);if(id!=='f14')splitGear(M.root,gb.min.y,P.len);
     return{P,id,root:M.root,pts:{gun:M.gun,eye:M.eye,noz:M.noz},tpl:buildTemplate(M.root,id==='f14'),size,gearH:-gb.min.y,len:id==='f14'?19.1:P.len,span:size.x};
   })();
   cache[id].catch(()=>{delete cache[id]});
@@ -475,14 +527,15 @@ function tintMats(root,color,f14){root.traverse(o=>{if(!o.isMesh)return;o.materi
 function fullInstance(M,paint){ // player / hangar: every node, own materials so the paint is per-instance
   const grp=new THREE.Group();const r=M.root.clone(true);grp.add(r);
   const f14=M.id==='f14';tintMats(r,paint,f14);let L,R;
-  const gearNodes=[];if(f14){({L,R}=setupSweep(grp));r.traverse(o=>{if(/^vehicle#(gear|wheel)/.test(o.name)){o.visible=false;gearNodes.push(o)}})}else{L=new THREE.Group();R=new THREE.Group();grp.add(L,R)}
+  const gearNodes=[];r.traverse(o=>{if(o.userData.gear){o.visible=false;gearNodes.push(o)}});if(f14){({L,R}=setupSweep(grp));r.traverse(o=>{if(/^vehicle#(gear|wheel)/.test(o.name)){o.visible=false;gearNodes.push(o)}})}else{L=new THREE.Group();R=new THREE.Group();grp.add(L,R)}
   return{grp,L,R,gearNodes};
 }
 function lightInstance(M,tint){ // AI: three merged groups, shared geometry
   const grp=new THREE.Group(),L=new THREE.Group(),R=new THREE.Group();
   if(M.id==='f14'){L.position.copy(PIVOT_L);R.position.set(-PIVOT_L.x,PIVOT_L.y,PIVOT_L.z)}grp.add(L,R);
-  [grp,L,R].forEach((p,i)=>M.tpl[i].forEach(({mat,geo})=>p.add(new THREE.Mesh(geo,tint&&mat.map&&!mat.transparent?tint(mat):mat))));
-  return{grp,L,R};
+  const GR=new THREE.Group();GR.visible=false;grp.add(GR);
+  [grp,L,R,GR].forEach((p,i)=>(M.tpl[i]||[]).forEach(({mat,geo})=>p.add(new THREE.Mesh(geo,tint&&mat.map&&!mat.transparent?tint(mat):mat))));
+  return{grp,L,R,gearNodes:[GR]};
 }
 const redTintCache=new Map();
 const redTint=m=>{if(!redTintCache.has(m)){const c=m.clone();c.color.set('#ffc9bf');redTintCache.set(m,c)}return redTintCache.get(m)};
@@ -525,7 +578,7 @@ class Aircraft{
   up(o=new V3()){return o.set(0,1,0).applyQuaternion(this.q)}
   right(o=new V3()){return o.set(-1,0,0).applyQuaternion(this.q)}
   place(p,yaw){this.pos.copy(p);this.q.setFromEuler(new THREE.Euler(0,yaw,0));this.dir.set(0,0,1).applyQuaternion(this.q);this.speed=Math.min(260,topSpeed(this.st)/3.6*.8);this.sink=0;this.av.set(0,0,0);
-    this.alive=true;this.dead=0;this.grp.visible=true;this.thr=this.st.ab>0?.9:1;this.rearm();releaseRunway(this);this.ground=null;this.setGear(false)}
+    this.alive=true;this.dead=0;this.grp.visible=true;this.thr=this.st.ab>0?.9:1;this.rearm();if(this.isPlayer){st.gloc=0;st.gEff=1}releaseRunway(this);this.ground=null;this.setGear(false)}
   setGear(v){this.gear=v;for(const n of this.gearNodes)n.visible=v}
   maxThr(){return this.st.ab>0?1.1:1}
   rates(){const s=this.speed,t=this.st.turn;let sf=clamp((s-50)/140,0,1);if(s>400)sf*=lerp(1,.65,clamp((s-400)/250,0,1));
@@ -557,30 +610,32 @@ class Aircraft{
 /* ================= landing, servicing, takeoff ================= */
 function releaseRunway(u){for(const b of BASES)if(b.occupant===u){b.occupant=null}}
 function teamName(t){return t===0?'블루':'레드'}
-function groundContact(u){
-  const b=runwayAt(u.pos);if(!u.gear||!b||b.team!==u.team)return false;
-  const f=u.fwd(new V3()),roll=Math.abs(Math.asin(clamp(u.right(_v).y,-1,1)));
-  if(!(u.vel.y>-15&&u.speed<150&&roll<.5&&Math.abs(f.x)>.82))return false;
-  if(b.occupant&&b.occupant!==u&&b.occupant.alive){u.pos.y=b.y+u.M.gearH+.6;u.sink=0;u.dir.y=Math.max(u.dir.y,.06);u.dir.normalize();
-    if(u===player&&!st.rwyMsgT){feed(`활주로 사용 중 (${b.occupant.name}) · 대기 후 다시 접근`,'#ffb547');st.rwyMsgT=4}return true}
-  b.occupant=u;u.ground={b,phase:'roll',t:0,sx:Math.sign(f.x)||1};u.sink=0;u.av.set(0,0,0);u.thr=0;
-  feed(`${u.name} ${teamName(u.team)} 기지 착륙 · 정비 시작`,u.team===0?'#4aa8ff':'#ff4a3d');return true}
+function groundContact(u){ // gear down + touching ground anywhere (not water) = landing
+  if(!u.gear)return false;const gy=H(u.pos.x,u.pos.z);if(gy<=.5)return false;
+  if(Math.abs(Math.asin(clamp(u.right(_v).y,-1,1)))>1.2||u.up(_v2).y<0)return false;
+  const b=runwayAt(u.pos);const f=u.fwd(new V3());
+  if(b&&b.occupant&&b.occupant!==u&&b.occupant.alive){u.pos.y=b.y+u.M.gearH+.6;u.sink=0;u.dir.y=Math.max(u.dir.y,.06);u.dir.normalize();
+    if(u===player&&!st.rwyMsgT){feed(`활주로 사용 중 (${b.occupant.name}) · 옆 땅에 내려도 돼요`,'#ffb547');st.rwyMsgT=4}return true}
+  if(b)b.occupant=u;u.ground={b,phase:'roll',t:0,yaw:Math.atan2(f.x,f.z)};u.sink=0;u.av.set(0,0,0);u.thr=0;u.speed=Math.min(u.speed,120);
+  feed(`${u.name} ${b?teamName(b.team)+' 기지':'야지'} 착륙 · 정비 시작`,u.team===0?'#4aa8ff':'#ff4a3d');return true}
 function groundUpdate(u,dt){
   const g=u.ground,b=g.b;let pitch=0;
-  const remain=b.len/2-g.sx*(u.pos.x-b.x);
-  if(g.phase==='roll'){const need=u.speed*u.speed/(2*Math.max(remain-60,15));u.speed=Math.max(0,u.speed-Math.max(16+u.speed*.05,need)*dt);if(u.speed<.5){u.speed=0;g.phase='service';g.t=0}}
+  if(g.phase==='roll'){u.speed=Math.max(0,u.speed-(18+u.speed*.12)*dt);if(u.speed<.5){u.speed=0;g.phase='service';g.t=0}}
   else if(g.phase==='service'){g.t+=dt;const k=dt/SERVICE_T;u.hp=Math.min(u.st.hp,u.hp+u.st.hp*k);u.fuel=Math.min(1,u.fuel+k);
     if(g.t>=SERVICE_T){const hp=u.st.hp;u.rearm();u.hp=hp;g.phase='ready';feed(`${u.name} 정비 완료 (수리·연료·무장)`,u.team===0?'#7dffa0':'#ff8a7d')}}
   else if(g.phase==='ready'){u.speed=0;if(!u.isPlayer||u.thr>=.95){g.phase='takeoff';u.thr=u.maxThr()}}
   else if(g.phase==='takeoff'){const ab=u.st.ab>0?clamp((u.thr-1)/.1,0,1):0;u.ab=ab;u.speed+=((Math.min(u.thr,1)*u.st.mil+ab*u.st.ab)*1.15-1.35e-4*u.speed*u.speed*1.9)*dt;
-    pitch=smooth(55,82,u.speed)*.14;if(u.speed>82||remain<120)liftoff(u)}
+    pitch=smooth(55,82,u.speed)*.14;if(u.speed>82)liftoff(u)}
   if(!u.ground)return;
-  u.pos.x+=g.sx*u.speed*dt;u.pos.z=lerp(u.pos.z,b.z,1-Math.exp(-dt*1.5));u.pos.y=b.y+u.M.gearH+.35;
-  u.q.setFromEuler(new THREE.Euler(-pitch,g.sx>0?Math.PI/2:-Math.PI/2,0,'YXZ'));u.dir.set(0,0,1).applyQuaternion(u.q);u.vel.copy(u.dir).multiplyScalar(u.speed);u.g=1;
+  const fx=Math.sin(g.yaw),fz=Math.cos(g.yaw);u.pos.x+=fx*u.speed*dt;u.pos.z+=fz*u.speed*dt;
+  const gy=ground(u.pos.x,u.pos.z);if(gy<=.5&&g.phase!=='takeoff'){u.hp=0;kill(u,null);return}
+  u.pos.y=(runwayAt(u.pos)?BASE_Y:gy)+u.M.gearH+.35;
+  const ahead=ground(u.pos.x+fx*6,u.pos.z+fz*6);const slope=Math.atan2(ahead-gy,6);
+  u.q.setFromEuler(new THREE.Euler(-(pitch+slope),g.yaw,0,'YXZ'));u.dir.set(0,0,1).applyQuaternion(u.q);u.vel.copy(u.dir).multiplyScalar(u.speed);u.g=1;
   if(g.phase!=='takeoff')u.ab=0;u.updFlames(dt);
 }
-function liftoff(u){const b=u.ground.b;u.ground=null;b.occupant=null;u.sink=0;u.av.set(0,0,0);u.speed=Math.max(u.speed,84);u.dir.set(0,0,1).applyQuaternion(u.q);u.dir.y=Math.max(u.dir.y,.1);u.dir.normalize();
-  feed(`${u.name} 이륙 · ${teamName(b.team)} 활주로 비었음`,b.team===0?'#4aa8ff':'#ff4a3d');
+function liftoff(u){const b=u.ground.b;u.ground=null;if(b)b.occupant=null;u.sink=0;u.av.set(0,0,0);u.speed=Math.max(u.speed,84);u.dir.set(0,0,1).applyQuaternion(u.q);u.dir.y=Math.max(u.dir.y,.1);u.dir.normalize();
+  feed(b?`${u.name} 이륙 · ${teamName(b.team)} 활주로 비었음`:`${u.name} 이륙`,u.team===0?'#4aa8ff':'#ff4a3d');
   if(u===player){aimToNose();st.aimPitch=.18;feed('G로 착륙 기어를 올리세요','#8c9aa6')}else{u.ai.gearT=4;u.ai.mode='attack'}}
 function finalApproach(e,dt){
   const b=baseOf(e.team),A=e.ai,tdx=b.x-b.len/2+180;e.setGear(true);
@@ -589,7 +644,7 @@ function finalApproach(e,dt){
   const tgt=new V3(ax,Math.max(gy(ax),ground(ax,b.z)+(ax<tdx-2500?150:0)),b.z);
   const want=tgt.sub(e.pos).normalize();const tq=new Q().setFromRotationMatrix(new THREE.Matrix4().lookAt(_v.set(0,0,0),_v2.copy(want).negate(),_v3.set(0,1,0)));
   e.q.slerp(tq,1-Math.exp(-dt*1.4));e.dir.set(0,0,1).applyQuaternion(e.q);e.vel.copy(e.dir).multiplyScalar(e.speed);e.pos.addScaledVector(e.vel,dt);e.g=1;e.ab=0;e.updFlames(dt);
-  if(e.pos.x>=tdx&&e.pos.y<gy(e.pos.x)+8){e.pos.y=b.y+e.M.gearH+.35;e.q.setFromEuler(new THREE.Euler(0,Math.PI/2,0));e.ground={b,phase:'roll',t:0,sx:1};
+  if(e.pos.x>=tdx&&e.pos.y<gy(e.pos.x)+8){e.pos.y=b.y+e.M.gearH+.35;e.q.setFromEuler(new THREE.Euler(0,Math.PI/2,0));e.ground={b,phase:'roll',t:0,yaw:Math.PI/2};
     feed(`${e.name} ${teamName(e.team)} 기지 착륙 · 정비 시작`,e.team===0?'#4aa8ff':'#ff4a3d')}
   else if(e.pos.x>b.x+b.len/2){A.mode='rtb';releaseRunway(e)}
 }
@@ -625,13 +680,13 @@ const mslGeo=new THREE.CylinderGeometry(.09,.09,3,8).rotateX(Math.PI/2),mslMat=n
 
 /* ================= game state ================= */
 const st={mode:'hangar',view:'tp',aimYaw:0,aimPitch:0,freeYaw:0,freePitch:0,slot:0,lockT:0,lockTarget:null,locked:false,feed:[],hitT:0,dmgT:0,shake:0,
-  fireHeld:false,flareCd:0,mslCd:0,warn:false,rwr:0,paused:true,tanker:null,tankerCd:0,refuel:false,rwyMsgT:0,score:[0,0],time:0,goal:20,timeLimit:420,over:false,tut:null};
+  fireHeld:false,flareCd:0,mslCd:0,warn:false,rwr:0,paused:true,tanker:null,tankerCd:0,refuel:false,rwyMsgT:0,gEff:1,gloc:0,score:[0,0],time:0,goal:20,timeLimit:420,over:false,tut:null};
 const keys={};
 const CALL={0:['바이퍼','고스트','루스터','팰컨'],1:['이반','보리스','드미트리','세르게이','알렉세이']};
 function feed(t,c='#e9eef2'){st.feed.unshift({t,c,life:6});if(st.feed.length>6)st.feed.pop()}
 let toastEl=null;function toast(t){if(toastEl)toastEl.remove();toastEl=document.createElement('div');toastEl.className='toast';toastEl.textContent=t;document.body.appendChild(toastEl);const el=toastEl;setTimeout(()=>el.remove(),2600)}
 
-function clearWorld(){for(const u of units){scene.remove(u.grp)}units=[];player=null;for(const m of missiles)scene.remove(m.mesh);missiles.length=0;bullets.length=0;flares.length=0;smoke.clear();fire.clear()}
+function clearWorld(){for(const d of decor)scene.remove(d);decor.length=0;for(const u of units){scene.remove(u.grp)}units=[];player=null;for(const m of missiles)scene.remove(m.mesh);missiles.length=0;bullets.length=0;flares.length=0;smoke.clear();fire.clear()}
 function spawnPoint(team){const side=team===0?1:-1;const x=rnd(-3500,3500),z=side*8500+rnd(-1500,1500);return{p:new V3(x,Math.max(ground(x,z)+1500,rnd(2300,3100)),z),yaw:side>0?Math.PI:0}}
 
 async function withLoading(ids){
@@ -642,6 +697,9 @@ async function withLoading(ids){
   finally{clearTimeout(t);ov.hidden=true}
 }
 
+const decor=[];
+function parkPlanes(models){for(const b of BASES){const side=b.team===0?1:-1;for(let i=0;i<5;i++){const M=models[(i+b.team)%models.length];const inst=lightInstance(M,null);inst.gearNodes.forEach(n=>n.visible=true);
+  const g=inst.grp;g.position.set(b.x-360+i*170,b.y+M.gearH+.3,b.z+side*150);g.rotation.y=side>0?Math.PI:0;scene.add(g);decor.push(g)}}}
 async function startMatch(){
   const pi=planeIndex(S.sel);const lo=Math.max(0,pi-2),hi=Math.min(PLANES.length-1,pi+2);
   const pool=PLANES.slice(lo,hi+1).map(p=>p.id);
@@ -653,6 +711,7 @@ async function startMatch(){
   for(let i=0;i<4;i++)units.push(new Aircraft(Ms[allyT],{team:0,name:CALL[0][i]}));
   for(let i=0;i<5;i++)units.push(new Aircraft(Ms[enemyT],{team:1,name:CALL[1][i]}));
   for(const u of units){const s=spawnPoint(u.team);u.place(s.p,s.yaw);if(!u.isPlayer)u.ai=newAI()}
+  parkPlanes([Ms[allyT],Ms[enemyT],Ms[S.sel]]);
   aimToNose();feed(`데스매치 시작 · 먼저 ${st.goal}킬`, '#ffb547');
   enterFlight();
 }
@@ -660,11 +719,11 @@ async function startTutorial(){
   const Ms=await withLoading([S.sel,'su27']);st.allyT=S.sel;getModel('kc46').catch(()=>{});
   clearWorld();st.mode='tutorial';st.over=false;resetPlayerState();
   player=new Aircraft(Ms[S.sel],{team:0,name:'나',player:true,paint:paintColor(S.sel),stats:statsFor(PLANES[planeIndex(S.sel)],S.sel,true)});units.push(player);
-  player.place(new V3(0,2600,9000),Math.PI);aimToNose();
+  player.place(new V3(0,2600,9000),Math.PI);aimToNose();parkPlanes([Ms[S.sel],Ms.su27]);
   st.tut={step:0,t:0,turned:0,lastYaw:st.aimYaw,views:0,drone:null,M:Ms.su27};
   enterFlight();
 }
-function resetPlayerState(){for(const b of BASES)b.occupant=null;Object.assign(st,{tanker:null,tankerCd:0,refuel:false,rwyMsgT:0,view:'tp',lockT:0,lockTarget:null,locked:false,feed:[],hitT:0,dmgT:0,shake:0,fireHeld:false,flareCd:0,mslCd:0,warn:false,rwr:0,slot:0});camera.near=.5;camera.fov=68;camera.updateProjectionMatrix()}
+function resetPlayerState(){for(const b of BASES)b.occupant=null;Object.assign(st,{gEff:1,gloc:0,tanker:null,tankerCd:0,refuel:false,rwyMsgT:0,view:'tp',lockT:0,lockTarget:null,locked:false,feed:[],hitT:0,dmgT:0,shake:0,fireHeld:false,flareCd:0,mslCd:0,warn:false,rwr:0,slot:0});camera.near=.5;camera.fov=68;camera.updateProjectionMatrix()}
 function aimToNose(){const f=player.fwd(new V3());st.aimYaw=Math.atan2(f.x,f.z);st.aimPitch=Math.asin(clamp(f.y,-1,1))}
 function newAI(){return{mode:'attack',t:0,brk:1,fireCd:rnd(0,2),mslCd:rnd(3,9),lockT:0,target:null,retarget:0,skill:clamp(.6+planeIndex(S.sel)*.025,0,.9),burst:0,gunT:0}}
 function enterFlight(){sfx.music(false);$('hangar').hidden=true;st.paused=false;sfx.init();sfx.resume();if(!isMobile())lockPointer();$('touch').hidden=!isMobile();last=performance.now()}
@@ -686,6 +745,7 @@ function kill(u,src){
 /* ================= input ================= */
 addEventListener('keydown',e=>{keys[e.code]=true;
   if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','F1','Enter'].includes(e.code)&&st.mode!=='hangar'&&e.target.tagName!=='INPUT')e.preventDefault();
+  if(e.code==='Escape'&&st.mode!=='hangar'&&!st.over){if(!$('keysOv').hidden){$('keysOv').hidden=true;return}if(st.paused){$('btnResume').click()}else if(!document.pointerLockElement)pauseGame(true);return}
   if(st.mode==='hangar'||st.paused)return;
   if(e.code==='KeyV'){st.view=st.view==='tp'?'ck':'tp';camera.near=st.view==='ck'?.03:.5;camera.fov=st.view==='ck'?78:68;camera.updateProjectionMatrix();if(st.tut)st.tut.views++}
   if(e.code==='Digit1')st.slot=0;if(e.code==='Digit2'&&player&&player.msl.length>1)st.slot=1;
@@ -728,9 +788,19 @@ document.addEventListener('pointerlockchange',()=>{if(!isMobile()&&!document.poi
   document.addEventListener('touchmove',e=>{if(st.mode!=='hangar')e.preventDefault()},{passive:false});
 }
 function chooseDevice(d){S.device=d;save();$('devOv').hidden=true;applyDevice();renderHangar()}
-function applyDevice(){const m=isMobile();renderer.setPixelRatio(m?Math.min(devicePixelRatio,1):Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=!m;resize();$('btnDev').textContent=m?'조작: 모바일':'조작: PC'}
+function applyDevice(){applyGfx();$('btnDev').textContent=isMobile()?'조작: 모바일':'조작: PC'}
+const GFX={low:{pr:.75,sh:false,cl:false,far:24000,t:'낮음: 그림자·구름 끔, 해상도 낮춤. 느린 기기용'},mid:{pr:1,sh:true,cl:true,far:34000,t:'보통: 그림자·구름 켬, 기본 해상도'},high:{pr:2,sh:true,cl:true,far:42000,t:'높음: 선명한 해상도와 먼 시야. 빠른 기기용'}};
+function applyGfx(){const q=S.gfx||(isMobile()?'low':'high'),g=GFX[q];renderer.setPixelRatio(Math.min(devicePixelRatio,q==='high'?1.5:g.pr));renderer.shadowMap.enabled=g.sh;
+  scene.traverse(o=>{if(o.material&&o.material.needsUpdate!==undefined&&o.isMesh&&o.receiveShadow)o.material.needsUpdate=true});
+  if(cloudMesh)cloudMesh.visible=g.cl;scene.fog.far=g.far;resize();
+  document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-checked',b.dataset.q===q));$('qInfo').textContent=g.t}
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{S.gfx=b.dataset.q;save();applyGfx()});
+$('btnHelp').onclick=()=>{$('keysOv').hidden=false};
+const syncSliders=()=>{$('sens2').value=S.sens;$('sens2v').textContent=S.sens;const v=S.vol??6;$('vol').value=v;$('volv').textContent=v};
+$('sens2').oninput=()=>{S.sens=+$('sens2').value;$('sens2v').textContent=S.sens;$('sens').value=S.sens;$('sensv').textContent=S.sens;save()};
+$('vol').oninput=()=>{S.vol=+$('vol').value;$('volv').textContent=S.vol;sfx.volume(S.vol/10);save()};
 $('devMobile').onclick=()=>chooseDevice('mobile');$('devPC').onclick=()=>chooseDevice('pc');
-function pauseGame(p){st.paused=p;$('pause').hidden=!p;if(p){sfx.gun(false);sfx.tone(null);st.fireHeld=false;touch.fire=touch.thrUp=touch.thrDn=false}}
+function pauseGame(p){st.paused=p;$('pause').hidden=!p;if(!p)$('keysOv').hidden=true;if(p){syncSliders();sfx.gun(false);sfx.tone(null);st.fireHeld=false;touch.fire=touch.thrUp=touch.thrDn=false}}
 $('btnResume').onclick=()=>{pauseGame(false);if(!isMobile())lockPointer();last=performance.now()};
 $('btnQuit').onclick=()=>{pauseGame(false);toHangar()};
 function dropFlares(u){if(!u||!u.alive||u.flr<=0)return;if(u===player){if(st.flareCd>0)return;st.flareCd=.9;if(st.tut)st.tut.flared=true}
@@ -766,20 +836,24 @@ const enemiesOf=u=>units.filter(x=>x.alive&&x.team!==u.team);
 function update(dt){
   const P=player;st.time+=dt;
   st.tankerCd-=dt;st.rwyMsgT=Math.max(0,st.rwyMsgT-dt);
+  // G-force: 5G grey-out, 7G blackout, 10G G-LOC (no control until G is back to normal)
+  st.gEff=lerp(st.gEff,P.alive&&!P.ground?Math.max(P.g,1):1,1-Math.exp(-dt*(P.g>st.gEff?2.2:1.2)));
+  if(P.alive&&st.gEff>=10&&!(st.gloc>0)){st.gloc=2.5;feed('G-LOC! 의식을 잃었습니다 · G가 내려가면 회복','#ff4a3d')}
+  if(st.gloc>0){st.gloc-=dt;if(st.gEff>2)st.gloc=Math.max(st.gloc,.3);if(st.gloc<=0)feed('의식 회복','#7dffa0')}
   if(P.alive){
     if(keys.ShiftLeft||keys.ShiftRight||touch.thrUp)P.thr=clamp(P.thr+dt*.5,0,P.maxThr());if(keys.Enter||keys.NumpadEnter||touch.thrDn)P.thr=clamp(P.thr-dt*.5,0,P.maxThr());
     if(P.ground){groundUpdate(P,dt)}else{
     if(isMobile()&&(touch.jx||touch.jy)){const k=S.sens/5;st.aimYaw-=touch.jx*Math.abs(touch.jx)*1.9*k*dt;st.aimPitch=clamp(st.aimPitch-touch.jy*Math.abs(touch.jy)*1.5*k*dt,-1.5,1.5)}
     const ad=aimDir(new V3());
     if(st.view==='ck'){const f=P.fwd(new V3()),a=f.angleTo(ad),lim=.5;if(a>lim){ad.copy(f).lerp(ad,lim/a).normalize();st.aimYaw=Math.atan2(ad.x,ad.z);st.aimPitch=Math.asin(clamp(ad.y,-1,1))}}
-    steer(P,ad,ctl);
+    steer(P,ad,ctl);if(st.gloc>0){ctl.pitch=ctl.roll=ctl.yaw=0}
     const kp=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0),kr=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),ky=(keys.KeyE?1:0)-(keys.KeyQ?1:0);
-    const manual=kp||kr||ky;if(manual){ctl.pitch=kp;ctl.roll=kr;ctl.yaw=ky}
+    const manual=(kp||kr||ky)&&!(st.gloc>0);if(manual){ctl.pitch=kp;ctl.roll=kr;ctl.yaw=ky}
     P.fly(dt,ctl);if(manual)aimToNose();
     if(P.fuel<=0&&!st.dryMsg){feed('연료 고갈! 엔진 정지 · 활공해서 착륙하거나 추락합니다','#ff4a3d');st.dryMsg=true}if(P.fuel>0)st.dryMsg=false;
     }
     // gun
-    const g=P.st.gun;st.fireT=(st.fireT||0)-dt;const firing=!!g&&(st.fireHeld||touch.fire)&&P.ammo>0&&!P.ground;
+    const g=P.st.gun;st.fireT=(st.fireT||0)-dt;const firing=!!g&&(st.fireHeld||touch.fire)&&P.ammo>0&&!P.ground&&!(st.gloc>0);
     if(firing){while(st.fireT<=0){st.fireT+=1/g.rate;P.ammo--;const mz=fireGun(P,.0035);fire.emit(mz,P.vel,g.dmg>12?1.8:1.2,g.dmg>12?3.6:2.6,.05,1,.7,.3,1,0);st.shake=Math.min(st.shake+.03,.35)}}
     else st.fireT=Math.max(st.fireT,0);
     sfx.gun(firing,g?Math.min(g.rate,100):50);
@@ -898,9 +972,10 @@ function matchRules(){
 function endMatch(res){
   st.over=true;sfx.gun(false);sfx.tone(null);try{document.exitPointerLock()}catch(e){}
   const k=player.kills,coins=k*60+(res==='win'?300:res==='draw'?200:120);
+  const crate=res==='win'?1:Math.random()<.35?1:0;S.crates+=crate;
   const lvBefore=hangarLevel();S.coins+=coins;S.matches++;save();const lvAfter=hangarLevel();
   $('rTitle').textContent=res==='win'?'승리':res==='lose'?'패배':'무승부';$('rTitle').style.color=res==='win'?'var(--hud)':res==='lose'?'var(--red)':'var(--amber)';
-  const rows=[['최종 점수',`블루 ${st.score[0]} : ${st.score[1]} 레드`],['내 격추',k],['격추당함',player.deaths],['획득 코인',`+${coins}`],['보유 코인',S.coins],['격납고',`Lv ${lvAfter} · ${S.matches%10}/10판`]];
+  const rows=[['최종 점수',`블루 ${st.score[0]} : ${st.score[1]} 레드`],['내 격추',k],['격추당함',player.deaths],['획득 코인',`+${coins}`],['보급 상자',crate?'+1개':'없음'],['보유 코인',S.coins],['격납고',`Lv ${lvAfter} · ${S.matches%10}/10판`]];
   if(lvAfter>lvBefore){const nx=PLANES[lvAfter-1];rows.push(['레벨 업!',nx?`${nx.name} 구매 가능`:'모든 기체 해금'])}
   $('rKv').innerHTML=rows.map(([a,b])=>`<span>${a}</span><b>${b}</b>`).join('');
   setTimeout(()=>{$('result').hidden=false},1200);
@@ -919,10 +994,10 @@ function tutorial(dt){
   const s=st.tut;const cur=TUT[s.step];s.t+=dt;
   let dy=st.aimYaw-s.lastYaw;s.turned+=Math.abs(dy)<1?Math.abs(dy):0;s.lastYaw=st.aimYaw;
   if(cur.spawn&&!s.drone){for(const u of units.filter(u=>u.team===1)){scene.remove(u.grp)}units=units.filter(u=>u.team!==1);const d=new Aircraft(s.M,{team:1,name:'적기',drone:true});units.push(d);
-    const f=player.fwd(new V3()).setY(0).normalize();d.place(player.pos.clone().addScaledVector(f,cur.spawn).setY(player.pos.y),Math.atan2(f.x,f.z));d.st={...d.st,hp:1};d.hp=1;d.thr=.7;d.speed=200;d.ai={passive:true,ph:Math.random()*6};
+    const f=player.fwd(new V3()).setY(0).normalize();d.place(player.pos.clone().addScaledVector(f,cur.spawn).setY(player.pos.y),Math.atan2(f.x,f.z));d.st={...d.st,hp:1};d.hp=1;d.thr=.7;d.speed=200;d.ai={passive:true,ph:Math.random()*6};s.drone=d;
     if(!cur.gun){player.msl.forEach(m=>m.n=Math.max(m.n,2))}}
   if(cur.done&&cur.done(s)&&s.t>1.2){s.step++;s.t=0;if(s.drone){scene.remove(s.drone.grp);units=units.filter(u=>u!==s.drone);s.drone=null}sfx.shot(880,.15,.15,'triangle');
-    if(TUT[s.step].end){if(!S.tut){S.tut=true;S.coins+=500;save();feed('튜토리얼 보상 +500 코인','#7dffa0')}setTimeout(()=>{if(st.mode==='tutorial'){try{document.exitPointerLock()}catch(e){}toHangar()}},5000)}}
+    if(TUT[s.step].end){if(!S.tut){S.tut=true;S.coins+=500;S.crates+=3;save();feed('튜토리얼 보상 +500 코인 · 보급 상자 3개','#7dffa0')}setTimeout(()=>{if(st.mode==='tutorial'){try{document.exitPointerLock()}catch(e){}toHangar()}},5000)}}
   if(cur.spawn&&s.drone&&s.drone.alive&&s.drone.pos.distanceTo(player.pos)>9000){scene.remove(s.drone.grp);units=units.filter(u=>u!==s.drone);s.drone=null}
 }
 
@@ -1049,6 +1124,10 @@ function drawHUD(){
   if(st.dmgT>0){const g=hx.createRadialGradient(cx,cy,Math.min(W,Hh)*.3,cx,cy,Math.max(W,Hh)*.7);g.addColorStop(0,'rgba(255,40,30,0)');g.addColorStop(1,`rgba(255,40,30,${st.dmgT})`);hx.fillStyle=g;hx.fillRect(0,0,W,Hh)}
   if(!P.alive&&!st.over){hx.fillStyle='rgba(0,0,0,.35)';hx.fillRect(0,cy-50,W,100);txt('격추됨',cx,cy,34,red,'center',700);
     if(P.respawnT>0)txt(`${Math.max(0,Math.ceil((st.mode==='match'?5:3)-P.respawnT))}초 후 재출격`,cx,cy+30,15,ink,'center')}
+  if(P.alive&&(st.gEff>6||st.gloc>0)){const k=st.gloc>0?.96:clamp((st.gEff-6)/3,0,.85);const vg=hx.createRadialGradient(cx,cy,Math.min(W,Hh)*(.45-k*.4),cx,cy,Math.max(W,Hh)*.65);
+    vg.addColorStop(0,`rgba(0,0,0,${k*.6})`);vg.addColorStop(1,`rgba(0,0,0,${Math.min(1,k*1.2)})`);hx.fillStyle=vg;hx.fillRect(0,0,W,Hh);
+    if(st.gloc>0)txt('G-LOC · 의식 잃음',cx,cy,26,'#ff4a3d','center',700);else if(st.gEff>7)txt(`${st.gEff.toFixed(1)} G · 블랙아웃`,cx,cy+60,16,'#ffb547','center',700)}
+  else if(P.alive&&st.gEff>4.5)txt(`${st.gEff.toFixed(1)} G`,cx,cy+60,14,st.gEff>5?'#ffb547':'#8c9aa6','center',700);
   // tutorial card
   if(st.tut){const s=st.tut,cur=TUT[s.step];const w=Math.min(560,W-40),x=cx;hx.fillStyle='rgba(10,14,18,.78)';hx.fillRect(x-w/2,70,w,92);hx.fillStyle=amber;hx.fillRect(x-w/2,70,3,92);
     txt(`튜토리얼 ${Math.min(s.step+1,TUT.length-1)} / ${TUT.length-1}`,x-w/2+16,92,11,amber,'left',600);wrapTxt((isMobile()&&cur.m)||cur.t,x,118,w-40,15,ink)}
@@ -1062,7 +1141,7 @@ function status(i){const P=PLANES[i];if(S.owned[P.id]||S.devPass)return'own';if(
 function renderHangar(){
   $('hLvl').textContent=`Lv ${hangarLevel()}`;$('hProg').style.width=(S.matches%10)*10+'%';
   const nxt=PLANES[hangarLevel()];$('hProgT').textContent=nxt?`${S.matches%10}/10판 · 다음: ${nxt.name.split(' ')[0]}`:`${S.matches%10}/10판 · 최고 레벨`;
-  $('hCoins').textContent=S.coins.toLocaleString();
+  $('hCoins').textContent=S.devPass?'∞':S.coins.toLocaleString();$('btnShop').textContent=`상점 · 상자 ${S.devPass?'∞':S.crates}`;
   $('list').innerHTML=PLANES.map((P,i)=>{const s=status(i);const lab=s==='own'?(S.sel===P.id?'탑승 중':'보유'):s==='buy'?`${P.price.toLocaleString()} 코인`:`격납고 Lv ${reqLevel(i)}`;
     return`<button class="ac ${s}${viewId===P.id?' sel':''}" data-id="${P.id}"><span class="i">${String(i+1).padStart(2,'0')}</span><span class="n">${P.name}</span><span class="s">${lab}</span></button>`}).join('');
   $('list').querySelectorAll('.ac').forEach(b=>b.onclick=()=>{viewId=b.dataset.id;if(S.owned[viewId]){S.sel=viewId;save()}renderHangar();showHangarModel()});
@@ -1075,9 +1154,15 @@ function renderHangar(){
   $('wpn').innerHTML=`기관포 <b>${P.gun?`${P.gun.name} · ${P.gun.ammo}발`:'없음'}</b><br>미사일 <b>${P.msl.map(m=>`${MSL[m[0]].name} ×${m[1]}`).join(' · ')}</b><br>플레어 <b>${P.flr}</b> · 최고속도 <b>${Math.round(topSpeed(cur))} km/h</b>`;
   $('sw').innerHTML=PAINTS.map(p=>`<button aria-pressed="${(S.paint[viewId]||'std')===p.id}" data-p="${p.id}" style="background:linear-gradient(135deg,${p.c},${p.c} 55%,rgba(0,0,0,.35))" ${S.owned[viewId]?'':'disabled'}>${p.name}</button>`).join('');
   $('sw').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.paint[viewId]=b.dataset.p;save();renderHangar();showHangarModel()});
-  $('paneUp').innerHTML=S.owned[viewId]?UPS.map(u=>{const lv=upLv(viewId,u.k),c=upCost(viewId,lv);return`<div class="up"><span class="nm2">${u.n} <span class="pips">${[0,1,2,3,4].map(k=>`<i class="${k<lv?'on':''}"></i>`).join('')}</span></span>
-    <button data-u="${u.k}" ${lv>=5||S.coins<c?'disabled':''}>${lv>=5?'최대':`${c} 코인`}</button><span class="ef">${u.e}</span></div>`}).join(''):'<div class="hint">기체를 보유하면 업그레이드할 수 있습니다.</div>';
-  $('paneUp').querySelectorAll('button[data-u]').forEach(b=>b.onclick=()=>{const k=b.dataset.u,lv=upLv(viewId,k),c=upCost(viewId,lv);if(S.coins<c||lv>=5)return;S.coins-=c;S.up[viewId]=S.up[viewId]||{};S.up[viewId][k]=lv+1;save();toast(`${UPS.find(x=>x.k===k).n} ${lv+1}단계 업그레이드 완료`);renderHangar()});
+  const dev=!!S.devPass;
+  $('paneUp').innerHTML=S.owned[viewId]?UPS.map(u=>{const lv=upLv(viewId,u.k),c=upCost(viewId,lv),pc=partCost(lv),ok=dev||(S.coins>=c&&S.parts[u.k]>=pc);
+    return`<div class="up"><span class="nm2">${u.n} <b class="num">${lv}/${MAXUP}</b> <span class="pips">${[...Array(MAXUP).keys()].map(k=>`<i class="${k<lv?'on':''}"></i>`).join('')}</span></span>
+    <span class="upb">${dev&&lv>0?`<button data-d="${u.k}" aria-label="${u.n} 한 단계 내리기">−</button>`:''}<button data-u="${u.k}" ${lv>=MAXUP||!ok?'disabled':''}>${lv>=MAXUP?'풀강':dev?'무료 강화':`${c}코인 · ${u.part} ${pc}`}</button></span>
+    <span class="ef">${u.e} · 보유 ${u.part} ${dev?'∞':S.parts[u.k]}개</span></div>`}).join('')+(dev?'<div class="hint">개발자 패스: 코인·부품 없이 마음대로 올리고 내릴 수 있어요.</div>':'<div class="hint">부품은 보급 상자에서 나와요. 위쪽 상점 버튼에서 상자를 열 수 있어요.</div>'):'<div class="hint">기체를 보유하면 업그레이드할 수 있습니다.</div>';
+  $('paneUp').querySelectorAll('button[data-u]').forEach(b=>b.onclick=()=>{const k=b.dataset.u,lv=upLv(viewId,k),c=upCost(viewId,lv),pc=partCost(lv);if(lv>=MAXUP)return;
+    if(!dev){if(S.coins<c||S.parts[k]<pc)return;S.coins-=c;S.parts[k]-=pc}
+    S.up[viewId]=S.up[viewId]||{};S.up[viewId][k]=lv+1;save();sfx.init();sfx.shot(700+lv*60,.12,.12,'triangle');toast(lv+1>=MAXUP?`${UPS.find(x=>x.k===k).n} 풀강 달성!`:`${UPS.find(x=>x.k===k).n} ${lv+1}강 완료`);renderHangar()});
+  $('paneUp').querySelectorAll('button[data-d]').forEach(b=>b.onclick=()=>{const k=b.dataset.d,lv=upLv(viewId,k);if(lv<=0)return;S.up[viewId][k]=lv-1;save();renderHangar()});
   $('panePaint').hidden=tab!=='paint';$('paneUp').hidden=tab!=='up';$('tabPaint').setAttribute('aria-selected',tab==='paint');$('tabUp').setAttribute('aria-selected',tab==='up');
   const go=$('btnGo');
   if(!S.tut){go.textContent='튜토리얼 시작';go.disabled=false;go.dataset.act='tut';$('btnTut').textContent='튜토리얼 건너뛰기'}
@@ -1089,7 +1174,7 @@ $('tabPaint').onclick=()=>{tab='paint';renderHangar()};$('tabUp').onclick=()=>{t
 $('btnGo').onclick=()=>{sfx.init();sfx.resume();const a=$('btnGo').dataset.act;
   if(a==='tut')startTutorial().catch(loadFail);
   else if(a==='go'){S.sel=viewId;save();startMatch().catch(loadFail)}
-  else if(a==='buy'){const P=PLANES[planeIndex(viewId)];if(S.coins>=P.price){S.coins-=P.price;S.owned[viewId]=true;S.sel=viewId;save();toast(`${P.name} 구매 완료!`);renderHangar()}}};
+  else if(a==='buy'){const P=PLANES[planeIndex(viewId)];if(S.devPass||S.coins>=P.price){if(!S.devPass)S.coins-=P.price;S.owned[viewId]=true;S.sel=viewId;save();toast(`${P.name} 구매 완료!`);renderHangar()}}};
 $('btnTut').onclick=()=>{if(!S.tut){S.tut=true;save();renderHangar();return}sfx.init();startTutorial().catch(loadFail)};
 $('btnKeys').onclick=()=>{$('keysOv').hidden=false};
 /* developer pass: codes are DEV-<8 serial chars>-<4 check chars>, checked offline against a keyed hash */
@@ -1100,21 +1185,43 @@ function passCheck(serial){let h=cyrb53(PASS_KEY+'|'+serial,77),o='';for(let i=0
 function passValid(code){const c=code.toUpperCase().replace(/[^A-Z0-9]/g,'');if(!/^DEV[A-Z0-9]{12}$/.test(c))return false;const body=c.slice(3);
   if([...body].some(ch=>!PASS_AB.includes(ch)))return false;return passCheck(body.slice(0,8))===body.slice(8)}
 function renderPass(){$('btnPass').classList.toggle('on',!!S.devPass);$('btnPass').textContent=S.devPass?'개발자 패스 사용 중':'개발자 패스';
-  $('passInfo').textContent=S.devPass?'이미 적용됐어요. 모든 전투기를 탈 수 있어요.':'구매하면 받은 코드를 입력하세요. 코드는 DEV-XXXX-XXXX-XXXX 형식입니다.'}
+  $('passInfo').textContent=S.devPass?'이미 적용됐어요. 전투기 · 코인 · 부품 · 상자 · 업그레이드가 모두 무한이에요.':'구매하면 받은 코드를 입력하세요. 코드는 DEV-XXXX-XXXX-XXXX 형식입니다.'}
 $('btnPass').onclick=()=>{$('passOv').hidden=false;$('passMsg').textContent='';renderPass();$('passCode').focus()};
 $('passClose').onclick=()=>{$('passOv').hidden=true};
 $('passApply').onclick=()=>{const v=$('passCode').value.trim();
   if(!passValid(v)){$('passMsg').textContent='코드가 올바르지 않아요. 글자를 다시 확인해 주세요.';$('passMsg').style.color='var(--red)';return}
   S.devPass=true;S.passCode=v.toUpperCase();for(const P of PLANES)S.owned[P.id]=true;save();
-  $('passMsg').textContent='개발자 패스 적용 완료! 모든 전투기가 해금됐어요.';$('passMsg').style.color='var(--hud)';renderPass();renderHangar();toast('개발자 패스 적용 · 전투기 14대 해금')};
-$('passCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('passApply').click()});$('keysClose').onclick=()=>{$('keysOv').hidden=true};
+  $('passMsg').textContent='개발자 패스 적용 완료! 전투기 14대 해금 · 코인 · 부품 · 상자 · 업그레이드 무한.';$('passMsg').style.color='var(--hud)';renderPass();renderHangar();toast('개발자 패스 적용 · 전투기 14대 해금')};
+$('passCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('passApply').click()});
+/* supply crates */
+function codeCheck(kind,serial){let h=cyrb53(PASS_KEY+'|'+kind+'|'+serial,77),o='';for(let i=0;i<4;i++){o+=PASS_AB[h%32];h=Math.floor(h/32)}return o}
+function boxValid(code){const c=code.toUpperCase().replace(/[^A-Z0-9]/g,'');if(!/^BOX[A-Z0-9]{12}$/.test(c))return null;const b=c.slice(3);if([...b].some(ch=>!PASS_AB.includes(ch)))return null;return codeCheck('BOX',b.slice(0,8))===b.slice(8)?c:null}
+function rollCrate(){const r=Math.random(),ks=UPS.map(u=>u.k);
+  if(r<.1){const out={coins:500,parts:{}};for(const k of ks)out.parts[k]=2;out.big=true;return out}
+  if(r<.4)return{coins:Math.round(rnd(150,800)/10)*10,parts:{}};
+  const k=pick(ks);return{coins:0,parts:{[k]:1+Math.floor(Math.random()*4)}}}
+function openCrates(n){const dev=!!S.devPass;if(!dev)n=Math.min(n,S.crates);if(n<=0){$('loot').innerHTML='<span class="hint">상자가 없어요. 판을 끝내거나 상자 코드를 입력하세요.</span>';return}
+  if(!dev)S.crates-=n;const sum={coins:0,parts:{}};let big=0;
+  for(let i=0;i<n;i++){const o=rollCrate();sum.coins+=o.coins;if(o.big)big++;for(const k in o.parts)sum.parts[k]=(sum.parts[k]||0)+o.parts[k]}
+  if(!dev)S.coins+=sum.coins;for(const k in sum.parts)S.parts[k]+=sum.parts[k];save();sfx.init();sfx.shot(520,.25,.14,'triangle');
+  const chips=[];if(big)chips.push(`<span class="chip big">대박 상자 ×${big}</span>`);if(sum.coins)chips.push(`<span class="chip c">코인 +${sum.coins}</span>`);
+  for(const k in sum.parts)chips.push(`<span class="chip">${partName(k)} +${sum.parts[k]}</span>`);$('loot').innerHTML=chips.join('');renderShop();renderHangar()}
+function renderShop(){$('crN').textContent=S.devPass?'∞':S.crates;$('partsList').innerHTML=UPS.map(u=>`<div><span>${u.part}</span><b>${S.devPass?'∞':S.parts[u.k]}</b></div>`).join('')}
+$('btnShop').onclick=()=>{renderShop();$('boxMsg').textContent='';$('shopOv').hidden=false};
+$('shopClose').onclick=()=>{$('shopOv').hidden=true};
+$('crOpen1').onclick=()=>openCrates(1);$('crOpen10').onclick=()=>openCrates(10);
+$('boxApply').onclick=()=>{const c=boxValid($('boxCode').value.trim()),m=$('boxMsg');
+  if(!c){m.textContent='코드가 올바르지 않아요. 글자를 다시 확인해 주세요.';m.style.color='var(--red)';return}
+  if(S.used.includes(c)){m.textContent='이미 사용한 코드예요.';m.style.color='var(--red)';return}
+  S.used.push(c);S.crates+=10;save();m.textContent='보급 상자 10개를 받았어요!';m.style.color='var(--hud)';$('boxCode').value='';renderShop();renderHangar()};
+$('boxCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('boxApply').click()});$('keysClose').onclick=()=>{$('keysOv').hidden=true};
 $('sens').value=S.sens;$('sensv').textContent=S.sens;$('sens').oninput=()=>{S.sens=+$('sens').value;$('sensv').textContent=S.sens;save()};
 function loadFail(e){console.error(e);$('loading').hidden=true;toast('기체를 불러오지 못했습니다. 다시 시도해 주세요.');toHangar()}
 async function showHangarModel(){
   const id=viewId,tk=++hangarLoad;
   let M;try{M=await withLoading([id]).then(r=>r[id])}catch(e){loadFail(e);return}
   if(tk!==hangarLoad)return;
-  if(hModel)hScene.remove(hModel);const inst=fullInstance(M,paintColor(id));hModel=inst.grp;if(M.id==='f14'){inst.L.rotation.y=.15;inst.R.rotation.y=-.15}
+  if(hModel)hScene.remove(hModel);const inst=fullInstance(M,paintColor(id));hModel=inst.grp;(inst.gearNodes||[]).forEach(n=>n.visible=true);if(M.id==='f14'){inst.L.rotation.y=.15;inst.R.rotation.y=-.15}
   hModel.traverse(o=>{if(o.isMesh){o.castShadow=true}});
   hModel.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(hModel,true);hModel.position.y=-b.min.y+.02;hScene.add(hModel);hLen=M.len;
 }
@@ -1125,12 +1232,15 @@ function toHangar(){
 }
 
 /* ================= loop ================= */
+let lastFilter='';
+function gFilter(){const ge=st.mode==='hangar'?1:st.gEff;const gray=clamp((ge-5)/1.2,0,1),dark=st.gloc>0?.97:clamp((ge-7)/2.2,0,.9);
+  const f=gray>.01||dark>.01?`grayscale(${gray.toFixed(2)}) brightness(${(1-dark).toFixed(2)})`:'';if(f!==lastFilter){glc.style.filter=f;lastFilter=f}}
 function frame(now){
   requestAnimationFrame(frame);$('portrait').hidden=!(isMobile()&&st.mode!=='hangar'&&innerHeight>innerWidth);const dt=Math.min((now-last)/1000,.05);last=now;
-  if(st.mode==='hangar'){
+  if(st.mode==='hangar'){if(lastFilter){glc.style.filter='';lastFilter=''}
     if(hDrag==null)hYaw+=dt*.12;const r=hLen*1.75+9;hCam.position.set(Math.sin(hYaw)*r,hLen*.42+3,Math.cos(hYaw)*r);hCam.lookAt(0,hLen*.12,0);
     renderer.render(hScene,hCam);drawHUD();return}
-  if(player){if(!st.paused)update(dt);updateCamera(dt);player.grp.visible=player.alive||player.dead>0}
+  if(player){if(!st.paused)update(dt);updateCamera(dt);gFilter();player.grp.visible=player.alive||player.dead>0}
   renderer.render(scene,camera);drawHUD();
 }
 resize();toHangar();if(!S.device){$('devOv').hidden=false;$('devMobile').classList.toggle('primary',matchMedia('(pointer:coarse)').matches);$('devPC').classList.toggle('primary',!matchMedia('(pointer:coarse)').matches)}else applyDevice();
@@ -1139,7 +1249,7 @@ const lobbyMusic=()=>{if(st.mode==='hangar'&&S.music!==false){sfx.init();sfx.res
 addEventListener('pointerdown',lobbyMusic);addEventListener('keydown',lobbyMusic);
 $('btnMus').textContent=S.music===false?'음악 켜기':'음악 끄기';
 $('btnMus').onclick=()=>{S.music=S.music===false;save();$('btnMus').textContent=S.music===false?'음악 켜기':'음악 끄기';if(S.music===false)sfx.music(false);else lobbyMusic()};requestAnimationFrame(frame);
-window.__game={hModel:()=>hModel,st,S,units:()=>units,player:()=>player,update,THREE,aimDir,startMatch,startTutorial,toHangar,save};
+window.__game={H,hModel:()=>hModel,st,S,units:()=>units,player:()=>player,update,THREE,aimDir,startMatch,startTutorial,toHangar,save};
 </script>
 
 </body>
