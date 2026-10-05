@@ -603,7 +603,7 @@ class Aircraft{
     this.mslOffsets=[new V3(M.span*.22,-.8,0),new V3(-M.span*.22,-.8,0)];
     this.rearm();
   }
-  rearm(){this.engineOut=false;this.negT=0;this.fuel=1;this.hp=this.st.hp;this.ammo=this.st.gun?this.st.gun.ammo:0;this.msl=this.st.msl.map(m=>({type:m[0],n:m[1]}));this.flr=this.st.flr;this.mslSide=0}
+  rearm(){this.engineOut=false;this.altOut=false;this.negT=0;this.fuel=1;this.hp=this.st.hp;this.ammo=this.st.gun?this.st.gun.ammo:0;this.msl=this.st.msl.map(m=>({type:m[0],n:m[1]}));this.flr=this.st.flr;this.mslSide=0}
   fwd(o=new V3()){return o.set(0,0,1).applyQuaternion(this.q)}
   up(o=new V3()){return o.set(0,1,0).applyQuaternion(this.q)}
   right(o=new V3()){return o.set(-1,0,0).applyQuaternion(this.q)}
@@ -620,7 +620,9 @@ class Aircraft{
     const ang=this.av.length();if(ang>1e-6){_q.setFromAxisAngle(_v.copy(this.av).divideScalar(ang),ang*dt);this.q.multiply(_q).normalize()}
     this.g=(-this.av.x*s)/G+this.up(_v).y;
     if(this.P.id==='f18'){this.negT=this.g<0?(this.negT||0)+dt:0;if(this.negT>10&&!this.engineOut){this.engineOut=true;if(this.isPlayer)feed('엔진 정지! 음의 G를 10초 넘게 유지 · 활공해서 착륙하세요','#ff4a3d')}}
-    const dry=this.fuel<=0||this.engineOut;const ab=!dry&&this.st.ab>0?clamp((this.thr-1)/.1,0,1):0;
+    if(this.pos.y>6096&&!this.altOut){this.altOut=true;if(this.isPlayer)feed('고도 20,000ft 초과 · 엔진 정지! 내려가면 재시동돼요','#ff4a3d')}
+    else if(this.altOut&&this.pos.y<5800){this.altOut=false;if(this.isPlayer)feed('엔진 재시동','#7dffa0')}
+    const dry=this.fuel<=0||this.engineOut||this.altOut;const ab=!dry&&this.st.ab>0?clamp((this.thr-1)/.1,0,1):0;
     const thrust=dry?0:Math.min(this.thr,1)*this.st.mil+ab*this.st.ab;
     const drag=1.35e-4*s*s*(this.gear?1.9:1)+.0011*Math.max(this.g-1,0)**2*s*.35;
     if(!dry)this.fuel=Math.max(0,this.fuel-(.25+.75*Math.min(this.thr,1)+2.2*ab)/this.fuelTime*dt*(st.mode==='tutorial'?.3:1));
@@ -880,15 +882,15 @@ function update(dt){
   st.tankerCd-=dt;st.rwyMsgT=Math.max(0,st.rwyMsgT-dt);
   // G-force: 5G grey-out, 7G blackout, 10G G-LOC (no control until G is back to normal)
   st.gEff=lerp(st.gEff,P.alive&&!P.ground?Math.max(P.g,1):1,1-Math.exp(-dt*(P.g>st.gEff?.9:1.8)));
-  if(P.alive&&st.gEff>=12&&!(st.gloc>0)){st.gloc=1.8;feed('G-LOC! 의식을 잃었습니다 · G가 내려가면 회복','#ff4a3d')}
-  if(st.gloc>0){st.gloc-=dt;if(st.gEff>4)st.gloc=Math.max(st.gloc,.2);if(st.gloc<=0)feed('의식 회복','#7dffa0')}
+  if(P.alive&&st.gEff>=12&&!(st.gloc>0)){st.gloc=2.5;st.glocT=0;st.glocCtl={pitch:ctl.pitch*.2,roll:ctl.roll*.15};feed('G-LOC! 의식을 잃었습니다 · G가 내려가면 회복','#ff4a3d')}
+  if(st.gloc>0){st.gloc-=dt;st.glocT=(st.glocT||0)+dt;if(st.gEff>4.5)st.gloc=Math.max(st.gloc,.2);if(st.gloc<=0){st.gloc=0;if(P.alive)aimToNose();feed('의식 회복 · 다시 조종할 수 있어요','#7dffa0')}}
   if(P.alive){
     if(keys.ShiftLeft||keys.ShiftRight||touch.thrUp)P.thr=clamp(P.thr+dt*.5,0,P.maxThr());if(keys.Enter||keys.NumpadEnter||touch.thrDn)P.thr=clamp(P.thr-dt*.5,0,P.maxThr());
     if(P.ground){groundUpdate(P,dt)}else{
     if(isMobile()&&(touch.jx||touch.jy)){const k=S.sens/5;st.aimYaw-=touch.jx*Math.abs(touch.jx)*1.9*k*dt;st.aimPitch=clamp(st.aimPitch-touch.jy*Math.abs(touch.jy)*1.5*k*dt,-1.5,1.5)}
     const ad=aimDir(new V3());
     if(st.view==='ck'){const f=P.fwd(new V3()),a=f.angleTo(ad),lim=.5;if(a>lim){ad.copy(f).lerp(ad,lim/a).normalize();st.aimYaw=Math.atan2(ad.x,ad.z);st.aimPitch=Math.asin(clamp(ad.y,-1,1))}}
-    steer(P,ad,ctl);if(st.gloc>0){ctl.pitch=ctl.roll=ctl.yaw=0}
+    steer(P,ad,ctl);if(st.gloc>0){const h=st.glocCtl||{pitch:0,roll:0};ctl.pitch=h.pitch;ctl.roll=h.roll;ctl.yaw=0;if(Math.abs(h.pitch)<.05){const f=P.fwd(new V3());ctl.pitch=f.y>-.6?-.3:0}}
     const kp=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0),kr=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),ky=(keys.KeyE?1:0)-(keys.KeyQ?1:0);
     const manual=(kp||kr||ky)&&!(st.gloc>0);if(manual){ctl.pitch=kp;ctl.roll=kr;ctl.yaw=ky}
     P.fly(dt,ctl);if(manual)aimToNose();
@@ -1001,6 +1003,7 @@ function ai(e,dt){
   if(missiles.some(m=>m.target===e)&&Math.random()<dt*.3)dropFlares(e);
   const agl=e.pos.y-ground(e.pos.x,e.pos.z),ah=e.pos.clone().addScaledVector(e.vel,3),aglA=ah.y-ground(ah.x,ah.z);
   if(agl<400||aglA<300){dir.y=Math.max(dir.y,.55);dir.normalize()}
+  if(e.pos.y>5200){dir.y=Math.min(dir.y,-.2);dir.normalize()}
   if(Math.hypot(e.pos.x,e.pos.z)>26000)dir.set(-e.pos.x,0,-e.pos.z).normalize();
   const c=steer(e,dir,{});c.pitch*=A.skill;c.roll*=A.skill;e.thr=!T?.9:T.pos.distanceTo(e.pos)>4000?e.maxThr():T.pos.distanceTo(e.pos)<700?.75:1;
   e.fly(dt,c,A.skill);if(e.pos.y<ground(e.pos.x,e.pos.z)+3&&!(e.gear&&groundContact(e))){e.hp=0;kill(e,null)}
@@ -1125,7 +1128,9 @@ function drawHUD(){
       hx.fillStyle='rgba(10,14,18,.7)';hx.fillRect(cx-190,Hh*.3-26,380,44);txt(msg,cx,Hh*.3,18,col,'center',700);
       if(g.phase==='service'){hx.fillStyle='rgba(255,255,255,.15)';hx.fillRect(cx-150,Hh*.3+8,300,4);hx.fillStyle=amber;hx.fillRect(cx-150,Hh*.3+8,300*g.t/SERVICE_T,4)}}
     const blink2=Math.floor(performance.now()/400)%2;
-    if(P.engineOut)txt('엔진 정지 · 활공해서 아무 땅에나 착륙하면 정비',cx,Hh*.16,20,red,'center',700);
+    if(P.altOut)txt('엔진 정지 · 고도 20,000ft 초과 · 5,800m 아래로 내려가면 재시동',cx,Hh*.16,19,red,'center',700);
+    else if(P.pos.y>5400)txt(`고도 ${Math.round(P.pos.y*3.281).toLocaleString()}ft · 20,000ft 넘으면 엔진 꺼짐`,cx,Hh*.16,17,amber,'center',700);
+    else if(P.engineOut)txt('엔진 정지 · 활공해서 아무 땅에나 착륙하면 정비',cx,Hh*.16,20,red,'center',700);
     else if(P.P.id==='f18'&&P.negT>2)txt(`음의 G ${P.negT.toFixed(1)}초 / 10초 · 넘으면 엔진 꺼짐`,cx,Hh*.16,18,P.negT>7?red:amber,'center',700);
     else if(P.fuel<=0)txt('연료 고갈 · 엔진 정지',cx,Hh*.16,20,red,'center',700);
     else if(P.fuel<.2&&blink2)txt(mob?'연료 부족 · 기어 내리고 기지 착륙 또는 급유기':'연료 부족 · G 착륙 정비 또는 F1 급유기',cx,Hh*.16,17,amber,'center',700);
@@ -1171,7 +1176,7 @@ function drawHUD(){
     if(P.respawnT>0)txt(`${Math.max(0,Math.ceil((st.mode==='match'?5:3)-P.respawnT))}초 후 재출격`,cx,cy+30,15,ink,'center')}
   if(P.alive&&(st.gEff>8||st.gloc>0)){const k=st.gloc>0?.92:clamp((st.gEff-8)/4,0,.7);const vg=hx.createRadialGradient(cx,cy,Math.min(W,Hh)*(.45-k*.4),cx,cy,Math.max(W,Hh)*.65);
     vg.addColorStop(0,`rgba(0,0,0,${k*.6})`);vg.addColorStop(1,`rgba(0,0,0,${Math.min(1,k*1.2)})`);hx.fillStyle=vg;hx.fillRect(0,0,W,Hh);
-    if(st.gloc>0)txt('G-LOC · 의식 잃음',cx,cy,26,'#ff4a3d','center',700);else if(st.gEff>9)txt(`${st.gEff.toFixed(1)} G · 블랙아웃`,cx,cy+60,16,'#ffb547','center',700)}
+    if(st.gloc>0){txt('G-LOC · 의식 잃음',cx,cy,26,'#ff4a3d','center',700);txt(`조종 불가 · 마지막 조종 방향으로 흘러가는 중 · 고도 ${Math.round(P.pos.y-ground(P.pos.x,P.pos.z))}m`,cx,cy+30,14,'#e9eef2','center',600)}else if(st.gEff>9)txt(`${st.gEff.toFixed(1)} G · 블랙아웃`,cx,cy+60,16,'#ffb547','center',700)}
   else if(P.alive&&st.gEff>6)txt(`${st.gEff.toFixed(1)} G`,cx,cy+60,14,st.gEff>7?'#ffb547':'#8c9aa6','center',700);
   if(st.chat&&st.chat.length){const by=mob?Hh*.62:Hh-246;st.chat.slice().reverse().forEach((c,i)=>{hx.globalAlpha=clamp(c.life/2,0,1);const y=by-i*20;
       txt(`${c.name}:`,16,y,13,c.team===0?blue:red,'left',700);hx.font=`700 13px ${UI}`;const w=hx.measureText(`${c.name}: `).width;txt(c.text,16+w,y,13,ink,'left',500);hx.globalAlpha=1})}
